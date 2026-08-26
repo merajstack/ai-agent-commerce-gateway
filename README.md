@@ -24,6 +24,15 @@ This repository is not a proof of concept wired together to demo well. It is a w
 
 <br>
 
+## 🌐 Live Deployments
+
+| Component | Description | Live Vercel Endpoint |
+| :--- | :--- | :--- |
+| **Footwear Storefront** | Apex Footwear Live Demo Merchant Store | [ai-agent-commerce-shoes.vercel.app](https://ai-agent-commerce-shoes.vercel.app/) |
+| **Agent Commerce Gateway** | Protocol-Agnostic Gateway & Audit Dashboard | [ai-agent-commerce-gateway-cjpp.vercel.app](https://ai-agent-commerce-gateway-cjpp.vercel.app/api/dashboard/) |
+
+<br>
+
 ## System Architecture
 
 The gateway is built as a layered pipeline. Every layer has exactly one responsibility, and no layer trusts the one before it.
