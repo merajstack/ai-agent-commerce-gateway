@@ -40,9 +40,9 @@ The gateway is built as a layered pipeline. Every layer has exactly one responsi
 
 ```
                               ┌──────────────────────────────┐
-                              │           AI BUYER            │
-                              │   (Gemini-powered agent)      │
-                              └───────────────┬───────────────┘
+                              │           AI BUYER           │
+                              │   (Gemini-powered agent)     │
+                              └───────────────┬──────────────┘
                                               │
                          speaks ACP  ─────────┼───────── speaks x402 v2
                                               │
