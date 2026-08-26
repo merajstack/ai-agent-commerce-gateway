@@ -285,4 +285,37 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
     expect(result.gatewayResponse).toBeNull();
     expect(checkoutCallCount).toBe(0);
   });
+
+  test('9. General talk ("tell me a joke") → conversational humor without triggering checkout', async () => {
+    const message = 'tell me a joke';
+    const result = await gemini.processMessage(message, [], 'acp');
+
+    expect(result.message.length).toBeGreaterThan(15);
+    expect(result.rawProtocolRequest).toBeNull();
+    expect(result.gatewayResponse).toBeNull();
+    expect(checkoutCallCount).toBe(0);
+  });
+
+  test('10. Store technical query ("which shoes are waterproof?") → returns Trail Blazer GTX & Aqua Walker specs', async () => {
+    const message = 'which shoes are waterproof?';
+    const result = await gemini.processMessage(message, [], 'acp');
+
+    expect(result.message).toContain('Trail Blazer GTX');
+    expect(result.message).toContain('Aqua Walker');
+    expect(result.message).toContain('Gore-Tex');
+    expect(result.rawProtocolRequest).toBeNull();
+    expect(result.gatewayResponse).toBeNull();
+    expect(checkoutCallCount).toBe(0);
+  });
+
+  test('11. Store policy query ("what is your return policy?") → returns 30-day policy & shipping info', async () => {
+    const message = 'what is your return policy?';
+    const result = await gemini.processMessage(message, [], 'acp');
+
+    expect(result.message).toContain('30-Day Easy Returns');
+    expect(result.message).toContain('Express Shipping');
+    expect(result.rawProtocolRequest).toBeNull();
+    expect(result.gatewayResponse).toBeNull();
+    expect(checkoutCallCount).toBe(0);
+  });
 });

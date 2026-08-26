@@ -7,7 +7,7 @@
 <img src="https://img.shields.io/badge/ACP-Supported-6C63FF?style=for-the-badge">
 <img src="https://img.shields.io/badge/x402_v2-Supported-F59E0B?style=for-the-badge">
 <img src="https://img.shields.io/badge/Razorpay-Test_Mode-3395FF?style=for-the-badge">
-<img src="https://img.shields.io/badge/Tests-380%20Passing-22C55E?style=for-the-badge">
+<img src="https://img.shields.io/badge/Tests-383%20Passing-22C55E?style=for-the-badge">
 <img src="https://img.shields.io/badge/Architecture-Protocol_Agnostic-000000?style=for-the-badge">
 
 </div>
@@ -20,7 +20,7 @@ Autonomous agents are beginning to transact on behalf of humans. Every emerging 
 
 **AI Agent Commerce Gateway** removes that decision entirely. It is a transaction layer that sits between any AI buyer and any merchant, absorbs whatever protocol the buyer speaks, and reduces it to a single canonical representation before a single line of security or payment logic ever runs. Protocols become an input format. The gateway is the system of record.
 
-This repository is not a proof of concept wired together to demo well. It is a working pipeline with adapter-level protocol isolation, a shared authorization and replay-protection layer, merchant-configurable policy enforcement, and live Razorpay settlement — backed by 380 passing tests across three independent codebases.
+This repository is not a proof of concept wired together to demo well. It is a working pipeline with adapter-level protocol isolation, a shared authorization and replay-protection layer, merchant-configurable policy enforcement, and live Razorpay settlement — backed by 383 passing tests across three independent codebases.
 
 <br>
 
@@ -233,10 +233,10 @@ This is not a static diagram in the product — it is a live, per-transaction tr
 
 ```
 Agent Commerce Gateway      359 passed
-AI Buyer                     15 passed
+AI Buyer                     18 passed
 Demo Merchant Store           6 passed
 --------------------------------------
-Total                       380 passed
+Total                       383 passed
 ```
 
 Every layer of the pipeline — adapters, canonical model, authorization, replay protection, policy engine, and settlement — is covered independently.

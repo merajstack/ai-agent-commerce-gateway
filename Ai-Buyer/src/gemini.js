@@ -4,53 +4,74 @@ const toolHandlers = require('./tools/handlers');
 const { generateProtocolPayload } = require('./protocols');
 
 /**
- * AI Shopping Agent Engine
+ * AI Shopping Agent Engine — Apex Footwear
+ * 
  * Features:
- * - Stateful multi-turn conversation tracking
- * - Gemini 3.5 Flash with Function Calling
- * - Autonomous Deterministic Planner for offline / fallback execution
- * - Strict separation of:
- *     1. Casual Conversation / Greetings (Friendly conversational reply only)
- *     2. Recommendation / Advice (Curated 1-2 shoe picks with rationale, NOT raw dumps)
- *     3. Decision Delegation ("choose 1" / "pick one" selects the best shoe and prompts for buy)
- *     4. Search / Browse (Filtered catalog view, no protocol request)
- *     5. Price Quotes & Calculations (Informational only, no checkout)
- *     6. Transaction / Purchase Intent (ONLY state that generates ACP/x402 protocol requests)
+ * - Conversational, witty, intelligent shopping companion & general talk assistant
+ * - Full knowledge base of Apex Footwear (10 shoe products, inventory, prices, specs, policies)
+ * - Open-domain conversational ability (jokes, general talk, fashion advice, sizing, running tips, tech)
+ * - Gemini Flash models with Function Calling + Multi-Turn Context Tracking
+ * - Deterministic fallback planner with complete store dataset & smart conversational Q&A
  */
 class AIAgentEngine {
   constructor() {
-    this.models = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'];
-    this.systemInstruction = `You are an intelligent, friendly, and conversational AI Shopping Assistant powered by the Agent Commerce Gateway.
-You shop like an expert stylist and human shopping companion: you understand nuances, exact product names, quantities, shoe sizes, budgets, and multi-turn context.
+    this.models = [
+      config.GEMINI_MODEL || 'gemini-3.5-flash',
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.6-flash'
+    ];
 
-FUNDAMENTAL PRINCIPLE:
-Conversation ≠ protocol request.
-Purchase intent → protocol request.
+    this.systemInstruction = `You are an intelligent, friendly, and conversational AI Shopping Assistant for Apex Footwear (https://apexfootwear.com), powered by the Agent Commerce Gateway.
+You speak like a knowledgeable footwear stylist, athlete advisor, and helpful everyday AI assistant.
 
-CONVERSATIONAL RULES:
-1. GREETINGS & CASUAL CHAT:
-   - If the user sends a greeting (e.g. "hey", "hello", "hi", "how are you", "what's up"):
-     → Answer naturally and warmly: "I’m doing well! What would you like to shop for?"
-     → DO NOT search the catalog, DO NOT list product recommendations, and DO NOT initiate any protocol flow.
-2. RECOMMENDATION REQUESTS ("recommend me", "what's the best option", "what should I buy"):
-   - Recommend only 1 or 2 specific top items with concise justifications (e.g. AeroGlide Runner for running performance, Urban Kicks for everyday casual).
-   - DO NOT dump the full 10-product catalog. Keep recommendations focused.
-3. ADVICE & DECISION DELEGATION ("choose 1", "pick one for me", "which one is better"):
-   - Pick the single best match (default to AeroGlide Runner in Size 9 if unspecified).
-   - Explain why it was selected and ask the user if they'd like to proceed with checkout.
-   - DO NOT execute checkout automatically on delegation; wait for purchase intent.
-4. SEARCH & BROWSE ("find running shoes under ₹5,000", "show sneakers in size 9"):
-   - Present a neat, relevant list matching the user's criteria.
-   - DO NOT generate protocol requests or initiate checkout.
-5. PRICE QUOTES & CART INQUIRIES ("how much for 3 AeroGlide", "total for 2 pairs"):
-   - Calculate and state the accurate total (unit price × quantity).
-   - Ask for confirmation before initiating purchase.
-6. TRANSACTION & CHECKOUT INTENT ("buy the shoes", "checkout", "okay buy them", "purchase now"):
-   - Add the specified item, quantity, and size to the storefront cart.
-   - Generate the protocol request and submit to the Agent Commerce Gateway.
-   - Present the authorization result and payment handoff.
+=== 1. NATURAL CONVERSATION & GENERAL TALK ===
+- You can chat casually, answer general knowledge questions, tell lighthearted jokes, give styling & shoe care advice, explain athletic training/running tips, and explain commerce technologies (like AI, agentic commerce, ACP, x402).
+- When the user asks general questions or initiates casual talk (e.g. "hey", "how are you?", "tell me a joke", "what is machine learning?", "who are you?", "what is ACP?"), answer warmly, helpfully, and naturally in conversational prose.
+- Do NOT force tool calls or dump catalog listings for simple general conversation, jokes, or greetings.
 
-Always maintain conversational coherence and remember the product discussed in previous turns.`;
+=== 2. COMPLETE STORE & CATALOG DATA (APEX FOOTWEAR) ===
+- Brand: Apex Footwear — Ultra-Premium Modern Footwear Storefront.
+- Policies:
+  • Free express delivery across India (2–4 business days delivery).
+  • 30-day hassle-free returns and instant size exchanges on unworn pairs.
+  • 100% genuine handcrafted & certified authentic footwear.
+  • Sizing: Standard UK / India shoe sizes (Size 5 to Size 12).
+- Technology & Payment Gateway:
+  • Integrated with Agent Commerce Gateway for cryptographic protocol-agnostic settlement.
+  • Supported Protocols: ACP (Agentic Commerce Protocol, RFC 2026-01-16) and x402 v2 (HTTP 402 Pay-per-Request).
+  • Payment Settlement: Razorpay Test Mode Sandbox.
+
+- COMPLETE PRODUCT CATALOG (10 Products):
+  1. [prod_shoe_001] "AeroGlide Runner" — ₹8,500 | Category: Running | Stock: 45 | Sizes: 7, 8, 9, 10, 11
+     • Specs: Ultra-lightweight engineered mesh, responsive high-rebound midsole, maximum energy return. Best for daily road runs, marathon training, and high-tempo fitness.
+  2. [prod_shoe_002] "Urban Kicks Classic" — ₹5,200 | Category: Casual | Stock: 120 | Sizes: 6, 7, 8, 9, 10
+     • Specs: Heavy-duty canvas upper, vintage skate silhouette, padded collar, vulcanized non-slip rubber outsole. Best for everyday street style and all-day comfort.
+  3. [prod_shoe_003] "Trail Blazer GTX" — ₹11,000 | Category: Outdoor / Hiking | Stock: 12 | Sizes: 8, 9, 10, 11, 12
+     • Specs: 100% waterproof Gore-Tex (GTX) membrane, reinforced rock-plate toe cap, high-traction Vibram multi-terrain lug outsole. Best for mountain hiking and wet muddy trails.
+  4. [prod_shoe_004] "Court Master Pro" — ₹7,800 | Category: Basketball | Stock: 30 | Sizes: 9, 10, 11, 12
+     • Specs: High-top dynamic ankle collar with lockdown strap, herringbone court traction pattern, responsive forefoot air cushion. Best for basketball and indoor court agility.
+  5. [prod_shoe_005] "Slip-On Comfort" — ₹3,500 | Category: Casual | Stock: 200 | Sizes: 5, 6, 7, 8, 9, 10
+     • Specs: Breathable knit textile, dual-density memory foam insole, elastic dual-side stretch gussets. Best budget-friendly everyday walking shoe.
+  6. [prod_shoe_006] "Sprint Spike 300" — ₹9,500 | Category: Running / Track | Stock: 0 (OUT OF STOCK) | Sizes: 7, 8, 9
+     • Specs: Elite 6-spike Pebax sprint plate, ultra-thin aerodynamic synthetic upper. Best for competitive 100m–400m track sprints.
+  7. [prod_shoe_007] "Leather Oxford Elite" — ₹14,500 | Category: Formal | Stock: 25 | Sizes: 8, 9, 10, 11
+     • Specs: Handcrafted full-grain Italian calfskin leather, Goodyear welted construction, hand-burnished finish. Best for formal black-tie events, weddings, and executive boardrooms.
+  8. [prod_shoe_008] "Aqua Walker" — ₹4,200 | Category: Outdoor / Water | Stock: 85 | Sizes: 6, 7, 8, 9, 10, 11
+     • Specs: Hydrophobic quick-dry mesh with drainage ports, razor-siped anti-slip rubber outsole, protective rubber bumper. Best for water sports, beach, kayaking, and monsoon.
+  9. [prod_shoe_009] "Velocity Nitro" — ₹10,200 | Category: Running / Racing | Stock: 50 | Sizes: 7, 8, 9, 10, 11
+     • Specs: Full-length curved carbon-composite propulsion plate, supercritical nitrogen-infused Nitro foam for explosive forward thrust. Best for racing and marathon PBs.
+  10. [prod_shoe_010] "Suede Loafer" — ₹6,800 | Category: Casual / Formal | Stock: 40 | Sizes: 7, 8, 9, 10
+      • Specs: Supple Italian calf suede, leather lining, hand-stitched apron, cushioned footbed. Best for smart-casual evenings, dinners, and driving.
+
+=== 3. CONVERSATIONAL COMMERCE GUIDELINES ===
+- GREETINGS & CASUAL TALK: If the user says "hey", "hello", "hi", "how are you":
+  → Answer naturally: "I’m doing well! What would you like to shop for?" (or friendly greeting).
+- RECOMMENDATIONS: When asked for advice, recommend 1 or 2 top specific items with concise reasons.
+- PRICE INQUIRIES: Accurately calculate unit price × quantity (e.g. 3 AeroGlide = 3 × ₹8,500 = ₹25,500) and invite them to purchase.
+- PURCHASE INTENT ("buy AeroGlide size 9", "checkout with ACP", "okay buy them"):
+  → Call add_to_cart and checkout tools to generate genuine protocol payloads and execute Gateway authorization.
+`;
   }
 
   /**
@@ -124,7 +145,7 @@ Always maintain conversational coherence and remember the product discussed in p
         },
         tools: toolDefinitions,
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.3,
           maxOutputTokens: 1024
         }
       };
@@ -133,7 +154,7 @@ Always maintain conversational coherence and remember the product discussed in p
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(4000)
+        signal: AbortSignal.timeout(6000)
       });
 
       if (!response.ok) {
@@ -149,7 +170,7 @@ Always maintain conversational coherence and remember the product discussed in p
 
       const parts = candidate.content.parts || [];
       const functionCalls = parts.filter(p => p.functionCall);
-      const textParts = parts.filter(p => p.text).map(p => p.text);
+      const textParts = parts.filter(p => p.text && !p.thought).map(p => p.text);
 
       if (textParts.length > 0) {
         finalAssistantText += (finalAssistantText ? '\n\n' : '') + textParts.join('\n');
@@ -232,18 +253,16 @@ Always maintain conversational coherence and remember the product discussed in p
   }
 
   /**
-   * Deterministic Autonomous Planner
-   * Accurately parses user intent, extracts product/quantity/size, tracks multi-turn state,
-   * and adheres strictly to:
-   * 1. Greetings -> conversational answer only
-   * 2. Recommendations -> curated 1-2 shoe suggestions with reasoning
-   * 3. "Choose 1" / "Pick one" -> selects best shoe, persists state, asks confirmation
-   * 4. Search / Browse -> filtered catalog list only (no raw dumps)
-   * 5. Price query -> calculate total, no checkout
-   * 6. Direct purchase / Confirmation -> execute checkout
+   * Deterministic Autonomous Planner & Knowledge Engine
+   * Equipped with the entire shoe store dataset and conversational intelligence:
+   * 1. Greetings & general casual talk (jokes, general queries, sizing, shoe care, technology, open talk)
+   * 2. Store FAQs & technical shoe specs (Gore-Tex, carbon plate, materials, warranty, returns)
+   * 3. Curated recommendations with expert reasoning
+   * 4. Decision delegation ("choose 1", "pick for me")
+   * 5. Price quotes with accurate multi-pair calculations
+   * 6. Direct purchase & protocol checkout execution (ACP / x402)
    */
   async _runDeterministicPlanner(userMessage, history = [], protocolId = 'acp', activityLogs = []) {
-    // Normalization for common typos & colloquial phrases
     let rawText = userMessage.toLowerCase().trim();
     let text = rawText
       .replace(/\bwhts\b|\bwat\b|\bwt\b/g, 'what')
@@ -256,36 +275,21 @@ Always maintain conversational coherence and remember the product discussed in p
     let gatewayResponse = null;
     let protocolMetadata = null;
 
-    // ── 0. GREETINGS & CASUAL CONVERSATION ───────────────────────────────────
-    const isGreeting = /^(hi|hello|hey|howdy|greetings|good\s+(?:morning|afternoon|evening)|yo|hey\s+there)\b/i.test(text) ||
-                       /\b(how\s+are\s+you|who\s+are\s+you|what\s+can\s+you\s+do|what'?s\s+up|help)\b/i.test(text);
-    const hasShoppingKeywords = /\b(shoe|shoes|sneaker|sneakers|runner|kicks|loafer|boots|buy|purchase|order|cart|checkout|price|cost|total|find|search|catalog|recommend|stock|size|under|below|₹|\$|choose|pick|select)\b/i.test(text);
-
-    if (isGreeting && !hasShoppingKeywords) {
-      return {
-        message: "I’m doing well! What would you like to shop for?",
-        activityLogs: [],
-        rawProtocolRequest: null,
-        gatewayResponse: null,
-        protocolMetadata: null
-      };
-    }
-
-    // Fetch catalog
+    // Full 10-product Catalog Dataset
     const catalogRes = await toolHandlers.searchProducts();
     let allProducts = catalogRes.products || [];
     if (!allProducts || allProducts.length === 0) {
       allProducts = [
-        { id: 'prod_shoe_001', name: 'AeroGlide Runner', price: 8500, category: 'Running', stock: 45, sizes: ['7', '8', '9', '10', '11'] },
-        { id: 'prod_shoe_002', name: 'Urban Kicks Classic', price: 5200, category: 'Casual', stock: 120, sizes: ['6', '7', '8', '9', '10'] },
-        { id: 'prod_shoe_003', name: 'Trail Blazer GTX', price: 11000, category: 'Outdoor', stock: 12, sizes: ['8', '9', '10', '11', '12'] },
-        { id: 'prod_shoe_004', name: 'Court Master Pro', price: 7800, category: 'Basketball', stock: 30, sizes: ['9', '10', '11', '12'] },
-        { id: 'prod_shoe_005', name: 'Slip-On Comfort', price: 3500, category: 'Casual', stock: 200, sizes: ['5', '6', '7', '8', '9', '10'] },
-        { id: 'prod_shoe_006', name: 'Sprint Spike 300', price: 9500, category: 'Running', stock: 0, sizes: ['7', '8', '9'] },
-        { id: 'prod_shoe_007', name: 'Leather Oxford Elite', price: 14500, category: 'Formal', stock: 25, sizes: ['8', '9', '10', '11'] },
-        { id: 'prod_shoe_008', name: 'Aqua Walker', price: 4200, category: 'Outdoor', stock: 85, sizes: ['6', '7', '8', '9', '10', '11'] },
-        { id: 'prod_shoe_009', name: 'Velocity Nitro', price: 10200, category: 'Running', stock: 50, sizes: ['7', '8', '9', '10', '11'] },
-        { id: 'prod_shoe_010', name: 'Suede Loafer', price: 6800, category: 'Casual', stock: 40, sizes: ['7', '8', '9', '10'] }
+        { id: 'prod_shoe_001', name: 'AeroGlide Runner', price: 8500, category: 'Running', stock: 45, sizes: ['7', '8', '9', '10', '11'], description: 'Ultra-lightweight road running shoe with maximum energy return foam.' },
+        { id: 'prod_shoe_002', name: 'Urban Kicks Classic', price: 5200, category: 'Casual', stock: 120, sizes: ['6', '7', '8', '9', '10'], description: 'Timeless canvas street sneaker with vulcanized rubber sole.' },
+        { id: 'prod_shoe_003', name: 'Trail Blazer GTX', price: 11000, category: 'Outdoor', stock: 12, sizes: ['8', '9', '10', '11', '12'], description: '100% waterproof trail shoe with Gore-Tex (GTX) membrane and Vibram lugs.' },
+        { id: 'prod_shoe_004', name: 'Court Master Pro', price: 7800, category: 'Basketball', stock: 30, sizes: ['9', '10', '11', '12'], description: 'High-performance basketball shoe with dynamic ankle support and air cushioning.' },
+        { id: 'prod_shoe_005', name: 'Slip-On Comfort', price: 3500, category: 'Casual', stock: 200, sizes: ['5', '6', '7', '8', '9', '10'], description: 'Ultra-flexible everyday slip-on with dual-density memory foam.' },
+        { id: 'prod_shoe_006', name: 'Sprint Spike 300', price: 9500, category: 'Running', stock: 0, sizes: ['7', '8', '9'], description: 'Elite 6-spike track competition shoe with Pebax propulsion plate. Out of stock.' },
+        { id: 'prod_shoe_007', name: 'Leather Oxford Elite', price: 14500, category: 'Formal', stock: 25, sizes: ['8', '9', '10', '11'], description: 'Handcrafted luxury formal oxford in full-grain Italian calfskin.' },
+        { id: 'prod_shoe_008', name: 'Aqua Walker', price: 4200, category: 'Outdoor', stock: 85, sizes: ['6', '7', '8', '9', '10', '11'], description: 'Hydrophobic quick-dry water shoe with razor-siped non-slip grip.' },
+        { id: 'prod_shoe_009', name: 'Velocity Nitro', price: 10200, category: 'Running', stock: 50, sizes: ['7', '8', '9', '10', '11'], description: 'Marathon racing shoe with carbon-composite plate and nitrogen foam.' },
+        { id: 'prod_shoe_010', name: 'Suede Loafer', price: 6800, category: 'Casual', stock: 40, sizes: ['7', '8', '9', '10'], description: 'Sophisticated penny loafer in supple Italian calf suede.' }
       ];
     }
 
@@ -303,7 +307,7 @@ Always maintain conversational coherence and remember the product discussed in p
       return null;
     };
 
-    // Helper: Extract quantity (default 1)
+    // Helper: Extract quantity
     const extractQuantity = (str) => {
       if (!str) return 1;
       const wordMap = {
@@ -334,12 +338,193 @@ Always maintain conversational coherence and remember the product discussed in p
       return match ? match[1] : '9';
     };
 
-    // 1. RECONSTRUCT STATE FROM HISTORY AND CART
+    // ── 0. GREETINGS & SIMPLE TALK ──────────────────────────────────────────
+    const isPureGreeting = /^(hi|hello|hey|howdy|greetings|good\s+(?:morning|afternoon|evening)|yo|hey\s+there)\b/i.test(text) ||
+                           /\b(how\s+are\s+you|how's\s+it\s+going|how\s+do\s+you\s+do|what'?s\s+up)\b/i.test(text);
+    const hasShoppingKeywords = /\b(shoe|shoes|sneaker|sneakers|runner|kicks|loafer|boots|buy|purchase|order|cart|checkout|price|cost|total|find|search|catalog|recommend|stock|size|under|below|₹|\$|choose|pick|select|oxford|suede|gtx|waterproof|trail|marathon|running|casual|formal|outdoor)\b/i.test(text);
+
+    if (isPureGreeting && !hasShoppingKeywords) {
+      return {
+        message: "I’m doing well! What would you like to shop for?",
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Jokes & Humor
+    if (/\b(tell\s+me\s+a\s+joke|make\s+me\s+laugh|say\s+something\s+funny|joke|pun)\b/i.test(text) && !hasShoppingKeywords) {
+      const jokes = [
+        "Why did the shoe go to school? Because it wanted to be a little sneaker! 😄👟 What can I help you find today at Apex Footwear?",
+        "Why are shoes always so calm and relaxed? Because they have good soles! 😄 How can I help you today?",
+        "What do runners eat before a big race? Nothing, they fast! 🏃💨 Looking for a fresh pair of running shoes?"
+      ];
+      return {
+        message: jokes[Math.floor(Math.random() * jokes.length)],
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Bot Identity & General Questions
+    if (/\b(who\s+(?:are|made|created)\s+you|what\s+is\s+your\s+name|what\s+are\s+you|what\s+can\s+you\s+do|introduce\s+yourself|tell\s+me\s+about\s+yourself)\b/i.test(text) && !text.includes('buy')) {
+      return {
+        message: `I am the autonomous AI Shopping Agent for **Apex Footwear**, powered by the **Agent Commerce Gateway**! 🤖👟\n\n` +
+                 `Here is what I can do for you:\n` +
+                 `• **Explore & Recommend**: Help you find running, casual, outdoor, formal, or basketball shoes.\n` +
+                 `• **Check Real-Time Data**: Instant specs, pricing in INR, sizes, and stock availability.\n` +
+                 `• **Shoe Sizing & Care Advice**: Advice on sizing, Gore-Tex care, suede cleaning, and running ergonomics.\n` +
+                 `• **Autonomous Execution**: Safely generate protocol-compliant **ACP** or **x402 v2** requests and execute checkout!\n\n` +
+                 `Feel free to ask me anything or say **"Show all shoes"**!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Protocol Information (ACP / x402 / Gateway)
+    if (/\b(what\s+is\s+acp|what\s+is\s+x402|how\s+does\s+the\s+gateway\s+work|what\s+is\s+agentic\s+commerce)\b/i.test(text)) {
+      return {
+        message: `### 🌐 Protocol-Agnostic Commerce Infrastructure\n\n` +
+                 `• **ACP (Agentic Commerce Protocol, RFC 2026-01-16)**: An open standard for autonomous agent purchase orders with opaque bearer authorization and idempotency headers.\n` +
+                 `• **x402 v2 (HTTP 402 / Base Sepolia)**: Standardized pay-per-request protocol using cryptographic EIP-712/EIP-3009 signatures on Base Sepolia testnet (\`eip155:84532\`).\n` +
+                 `• **Agent Commerce Gateway**: Sits between AI Buyers and merchants, normalizes diverse protocol formats into one canonical \`CommerceRequest\`, verifies replay protection & merchant policies, and executes approved orders via **Razorpay Test Mode**!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Weather & Casual Chat
+    if (/\b(weather|temperature|forecast|rainy|sunny|cold|hot)\b/i.test(text) && !hasShoppingKeywords) {
+      return {
+        message: `I don't have real-time live weather feeds, but whatever the weather is outside, we've got you covered! ☀️🌧️\n\n` +
+                 `• **Rain & Mud**: Check out our waterproof **Trail Blazer GTX** (₹11,000) with Gore-Tex.\n` +
+                 `• **Sunny Runs**: The breathable **AeroGlide Runner** (₹8,500) keeps feet cool.\n` +
+                 `• **Monsoon & Beach**: The quick-drain **Aqua Walker** (₹4,200) is built for water activities.\n\n` +
+                 `What kind of weather are you stepping out into?`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Technology / AI / Science Chat
+    if (/\b(what\s+is\s+(?:ai|artificial\s+intelligence|machine\s+learning|ml|llm)|tell\s+me\s+about\s+ai)\b/i.test(text)) {
+      return {
+        message: `Artificial Intelligence (AI) and Machine Learning enable computers to understand natural language, reason over complex tasks, and act autonomously. 🤖\n\n` +
+                 `Here at **Apex Footwear**, I use conversational AI integrated with the **Agent Commerce Gateway** to negotiate, verify, and execute purchases across open agentic protocols like **ACP** and **x402 v2**!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Store Policies: Shipping, Returns, Exchanges
+    if (/\b(return\s+policy|exchange\s+policy|shipping\s+time|delivery\s+time|how\s+long\s+does\s+shipping\s+take|warranty)\b/i.test(text)) {
+      return {
+        message: `### 📦 Apex Footwear Store Policies\n\n` +
+                 `• 🚚 **Express Shipping**: Free express delivery across India in **2–4 business days** on all orders.\n` +
+                 `• 🔄 **30-Day Easy Returns**: 30-day hassle-free return and size exchange policy for all unworn pairs with original tags.\n` +
+                 `• 🛡️ **100% Genuine Guarantee**: All footwear is handcrafted and certified authentic with manufacturer warranty.\n` +
+                 `• 💳 **Secure Payment**: Integrated with **Agent Commerce Gateway** and **Razorpay Sandbox**!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Shoe Care & Maintenance (Suede, Leather, Cleaning)
+    if (/\b(how\s+to\s+clean|care\s+for|clean\s+suede|clean\s+leather|maintenance)\b/i.test(text)) {
+      if (text.includes('suede')) {
+        return {
+          message: `### 👞 Suede Shoe Care Guide (e.g. Suede Loafer)\n\n` +
+                   `1. **Dry Brushing**: Use a soft-bristle suede brush in one direction to lift dirt and restore nap.\n` +
+                   `2. **Spot Cleaning**: Use a dedicated suede eraser for dry scuffs. Avoid liquid water on suede!\n` +
+                   `3. **Weatherproofing**: Spray with a silicone-free water-repellent suede protector before damp weather.\n` +
+                   `4. **Storage**: Store with cedar shoe trees in breathable dust bags.`,
+          activityLogs: [],
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+      }
+      return {
+        message: `### 👟 General Footwear Care Tips\n\n` +
+                 `• **Running & Mesh (AeroGlide / Velocity Nitro)**: Wipe with a damp cloth and mild soap. Always air-dry away from direct heat.\n` +
+                 `• **Gore-Tex / Trail (Trail Blazer GTX)**: Rinse off dried mud under lukewarm tap water. Reapply DWR water-repellent spray seasonally.\n` +
+                 `• **Full-Grain Leather (Oxford Elite)**: Apply leather cream polish every 3–4 weeks and buff with a horsehair brush.\n` +
+                 `• **Suede (Suede Loafer)**: Use a dry suede brush and avoid water soaking.`,
+          activityLogs: [],
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+    }
+
+    // Sizing & Fit Advice
+    if (/\b(sizing|measure|fit\s+guide|what\s+size|which\s+size|wide\s+feet|shoe\s+sizes?)\b/i.test(text) && !text.match(/size\s*[:\s]?\s*\d+/i)) {
+      return {
+        message: `### 📏 Apex Footwear Sizing & Fit Guide\n\n` +
+                 `We use **standard UK / India sizing** (Sizes 5 to 12):\n` +
+                 `- **Size 6**: ~24.5 cm foot length\n` +
+                 `- **Size 7**: ~25.5 cm foot length\n` +
+                 `- **Size 8**: ~26.5 cm foot length\n` +
+                 `- **Size 9**: ~27.5 cm foot length (Most Popular)\n` +
+                 `- **Size 10**: ~28.5 cm foot length\n` +
+                 `- **Size 11**: ~29.5 cm foot length\n\n` +
+                 `💡 **Pro Tip**: If you have wider feet or are purchasing distance runners (**AeroGlide Runner** / **Velocity Nitro**), we recommend choosing **half a size up** for toe-box comfort!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // Specific Product Feature Searches (Waterproof, Carbon plate, Out of Stock, Luxury, Budget)
+    if (/\b(waterproof|gore\s*tex|gtx|water\s+shoe|rain)\b/i.test(text) && !text.startsWith('buy')) {
+      return {
+        message: `### 🌧️ Waterproof & Water-Ready Shoes\n\n` +
+                 `1. 🏔️ **Trail Blazer GTX** — **₹11,000** (Size 8–12 | Stock: 12)\n` +
+                 `   • Features a 100% waterproof **Gore-Tex (GTX)** membrane and rugged multi-terrain Vibram lug sole for mountain hiking.\n\n` +
+                 `2. 🌊 **Aqua Walker** — **₹4,200** (Size 6–11 | Stock: 85)\n` +
+                 `   • Hydrophobic quick-dry water shoe with drainage ports and siped anti-slip rubber outsole for water sports & monsoon.\n\n` +
+                 `Would you like to buy either pair? Say **"Buy Trail Blazer GTX"** or **"Buy Aqua Walker"**!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    if (/\b(carbon\s+plate|marathon|fastest|super\s+shoe|nitro)\b/i.test(text) && !text.startsWith('buy')) {
+      return {
+        message: `### ⚡ Elite Racing & Marathon Footwear\n\n` +
+                 `Our flagship race-day shoe is the **Velocity Nitro** (₹10,200) 🏆\n` +
+                 `• **Full-Length Carbon-Composite Plate**: Delivers explosive propulsion with every stride.\n` +
+                 `• **Nitrogen-Infused Nitro Foam**: Supercritical foam offering maximum energy return at minimal weight.\n` +
+                 `• **Sizes**: 7, 8, 9, 10, 11 | **Stock**: 50 pairs available.\n\n` +
+                 `For daily high-tempo training, our **AeroGlide Runner** (₹8,500) is also a fantastic companion! Ready to order? Say **"Buy Velocity Nitro in size 9"**!`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
+    }
+
+    // ── 1. RECONSTRUCT STATE FROM HISTORY AND CART ───────────────────────────
     let stateProduct = null;
     let stateQuantity = 1;
     let stateSize = '9';
 
-    // Check storefront cart state
     const currentCart = await toolHandlers.getCart();
     if (currentCart.items && currentCart.items.length > 0) {
       const lastCartItem = currentCart.items[currentCart.items.length - 1];
@@ -351,7 +536,6 @@ Always maintain conversational coherence and remember the product discussed in p
       }
     }
 
-    // Scan history backwards to recover discussed product/quantity/size
     if (history && history.length > 0) {
       for (let i = history.length - 1; i >= 0; i--) {
         const msgText = history[i].content;
@@ -371,7 +555,6 @@ Always maintain conversational coherence and remember the product discussed in p
       }
     }
 
-    // Check if current message has a new product, explicit quantity, or size
     const currentProductMatch = findProductInText(text);
     if (currentProductMatch) {
       stateProduct = currentProductMatch;
@@ -384,7 +567,7 @@ Always maintain conversational coherence and remember the product discussed in p
       stateSize = extractSize(text);
     }
 
-    // 2. CLASSIFY INTENT
+    // ── 2. CLASSIFY SHOPPING INTENT ──────────────────────────────────────────
     const pricePatterns = [
       'tell me the price', 'tell me the total', 'how much', 'what is the price',
       'what is the total', 'calculate total', 'price before', 'before buying',
@@ -416,14 +599,10 @@ Always maintain conversational coherence and remember the product discussed in p
     const isTransactionIntent = !isPriceOnlyIntent && (isConfirmPhrase || isDirectBuy);
 
     const isCartViewIntent = text.includes('cart') && (text.includes('show') || text.includes('view') || text.includes('what'));
-
-    // Check for "Choose 1" / "Pick for me" / "You decide"
     const isChooseForMeIntent = /\b(choose\s*(?:one|1)?|pick\s*(?:one|1)?|select\s*(?:one|1)?|you\s+choose|you\s+pick|which\s+one\s+should\s+i|your\s+choice|decide\s+for\s+me)\b/i.test(text) && !isTransactionIntent;
-
-    // Check for "Recommendation" / "Suggestion" / "What's best"
     const isRecommendationIntent = /\b(recommend|recommendation|suggest|suggestion|best\s+shoe|best\s+one|top\s+pick|favorite|favourite|what\s+do\s+you\s+suggest|what\s+should\s+i\s+buy)\b/i.test(text) && !isTransactionIntent && !isChooseForMeIntent;
 
-    // 3. EXECUTE BASED ON STRICT INTENT
+    // ── 3. EXECUTE SHOPPING INTENT ───────────────────────────────────────────
 
     // --- CASE A: View Cart ---
     if (isCartViewIntent) {
@@ -457,11 +636,11 @@ Always maintain conversational coherence and remember the product discussed in p
       const topCasual = allProducts.find(p => p.name.includes('Urban Kicks')) || allProducts[1];
       const topOutdoor = allProducts.find(p => p.name.includes('Aqua Walker')) || allProducts[7];
 
-      responseText = `Here are my **top two picks** depending on what you're looking for:\n\n` +
-        `1. 🏃 **${topRunning.name}** (₹${topRunning.price.toLocaleString('en-IN')}) — Our **#1 performance shoe**. Features ultra-lightweight responsive cushioning and breathable mesh for maximum energy return.\n` +
-        `2. 👟 **${topCasual.name}** (₹${topCasual.price.toLocaleString('en-IN')}) — Perfect for **daily casual wear**. Vintage aesthetics with premium modern comfort.\n\n` +
+      responseText = `Here are my **top two picks** depending on your lifestyle:\n\n` +
+        `1. 🏃 **${topRunning.name}** (₹${topRunning.price.toLocaleString('en-IN')}) — Our **#1 running shoe**. Ultra-lightweight with high-rebound cushioning for road running and training.\n` +
+        `2. 👟 **${topCasual.name}** (₹${topCasual.price.toLocaleString('en-IN')}) — Perfect for **everyday casual wear**. Vintage street aesthetic with durable vulcanized comfort.\n\n` +
         `💡 *Looking for great value under ₹5,000?* The **${topOutdoor.name}** (₹${topOutdoor.price.toLocaleString('en-IN')}) is also fantastic for outdoor versatility.\n\n` +
-        `Which one catches your eye? You can say **"Choose 1 for me"**, **"Tell me the price for 2"**, or **"Buy the ${topRunning.name}"**!`;
+        `Which one catches your eye? Say **"Choose 1 for me"**, **"Tell me the price for 2"**, or **"Buy the ${topRunning.name}"**!`;
 
       return {
         message: responseText,
@@ -498,7 +677,6 @@ Always maintain conversational coherence and remember the product discussed in p
     }
 
     // --- CASE D: Informational / Price Quote Only ---
-    // Strict Rule: DO NOT call checkout(), DO NOT create protocol request, DO NOT create Razorpay order!
     if (isPriceOnlyIntent) {
       const targetProduct = stateProduct || allProducts[0];
       const totalPrice = targetProduct.price * stateQuantity;
@@ -559,9 +737,7 @@ Always maintain conversational coherence and remember the product discussed in p
     }
 
     // --- CASE F: Transaction / Purchase Intent ONLY ---
-    // Strict Rule: Protocol request is generated ONLY when purchase intent is active!
     if (isTransactionIntent) {
-      // Check if budget is specified with buy command
       const budgetMatch = text.match(/(?:under|below|less than|<)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i);
       if (budgetMatch && !currentProductMatch) {
         const budget = parseInt(budgetMatch[1].replace(/,/g, ''), 10);
@@ -573,7 +749,7 @@ Always maintain conversational coherence and remember the product discussed in p
 
       const targetProduct = stateProduct || allProducts[0];
 
-      // 1. Add to cart with exact state
+      // 1. Add to cart
       activityLogs.push({
         tool: 'add_to_cart',
         status: 'running',
@@ -662,18 +838,36 @@ Always maintain conversational coherence and remember the product discussed in p
       };
     }
 
-    // ── CASE G: PRODUCT SEARCH & BROWSING ONLY (INFORMATIONAL) ───────────────
-    // User wants to discover or search specific categories or budgets.
+    // ── CASE G: CATALOG SEARCH & PRODUCT BROWSING ────────────────────────────
     let matchedCategory = null;
     if (text.includes('running')) matchedCategory = 'Running';
     else if (text.includes('casual') || text.includes('sneaker')) matchedCategory = 'Casual';
     else if (text.includes('formal') || text.includes('oxford')) matchedCategory = 'Formal';
     else if (text.includes('outdoor') || text.includes('water')) matchedCategory = 'Outdoor';
+    else if (text.includes('basketball') || text.includes('court')) matchedCategory = 'Basketball';
 
     let budgetLimit = null;
     const bMatch = text.match(/(?:under|below|less than|<)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)/i);
     if (bMatch) {
       budgetLimit = parseInt(bMatch[1].replace(/,/g, ''), 10);
+    }
+
+    const isSearchQuery = /\b(find|search|show|list|catalog|shoes?|sneakers?|browse|collection|options|all|under|below|less)\b/i.test(text) || matchedCategory || budgetLimit !== null;
+
+    // Open-domain casual conversation fallback
+    if (!isSearchQuery && !currentProductMatch) {
+      return {
+        message: `I'm happy to chat about footwear styles, running training, shoe care, or help you explore the **Apex Footwear** collection! 👟✨\n\n` +
+                 `Feel free to ask me questions like:\n` +
+                 `• *"Show me running shoes"* \n` +
+                 `• *"Which shoes are waterproof?"*\n` +
+                 `• *"How do I measure my shoe size?"*\n` +
+                 `• *"Tell me a joke!"*`,
+        activityLogs: [],
+        rawProtocolRequest: null,
+        gatewayResponse: null,
+        protocolMetadata: null
+      };
     }
 
     let matching = allProducts;
@@ -689,7 +883,7 @@ Always maintain conversational coherence and remember the product discussed in p
     if (matching.length === 0) {
       matching = allProducts.slice(0, 3);
     } else {
-      matching = matching.slice(0, 3); // Keep it concise and curated
+      matching = matching.slice(0, 3);
     }
 
     activityLogs.push({

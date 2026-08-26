@@ -46,7 +46,7 @@ def authenticate_merchant(request: Request) -> str:
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     
-    token = auth_header[7:]
+    token = auth_header[7:].strip()
     token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
     
     merchant_id = merchant_store.get_merchant_id_by_api_key_hash(token_hash)

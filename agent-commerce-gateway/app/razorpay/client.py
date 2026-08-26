@@ -83,6 +83,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
@@ -262,7 +263,7 @@ class RazorpayClient:
                 now,
             )
 
-        safe_receipt = receipt[:RAZORPAY_RECEIPT_MAX_LEN]
+        safe_receipt = re.sub(r'[^a-zA-Z0-9_-]', '_', str(receipt))[:RAZORPAY_RECEIPT_MAX_LEN]
         payload: dict = {
             "amount": amount_minor,
             "currency": currency.upper(),

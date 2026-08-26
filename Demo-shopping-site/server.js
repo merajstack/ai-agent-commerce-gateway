@@ -193,7 +193,7 @@ app.post('/api/connect', async (req, res) => {
   if (!apiKey) {
     return res.status(400).json({ error: 'API key is required' });
   }
-
+  const cleanApiKey = String(apiKey).trim().replace(/[^\x20-\x7E]/g, "");
   const targetGatewayUrl = (gatewayUrl || runtimeConfig.gatewayUrl || 'http://localhost:8001').replace(/\/$/, "");
 
   if (!AgentCommerceGateway) {
@@ -201,10 +201,10 @@ app.post('/api/connect', async (req, res) => {
   }
 
   try {
-    const gateway = new AgentCommerceGateway(apiKey, targetGatewayUrl);
+    const gateway = new AgentCommerceGateway(cleanApiKey, targetGatewayUrl);
     const verifyResult = await gateway.verifyCredentials();
 
-    runtimeConfig.apiKey = apiKey;
+    runtimeConfig.apiKey = cleanApiKey;
     runtimeConfig.gatewayUrl = targetGatewayUrl;
     runtimeConfig.merchantId = verifyResult.merchant_id || 'merchant-demo-001';
     runtimeConfig.connected = true;

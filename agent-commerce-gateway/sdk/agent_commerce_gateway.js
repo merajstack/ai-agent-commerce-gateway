@@ -11,7 +11,7 @@ class AgentCommerceGateway {
         if (typeof window !== "undefined") {
             console.warn("AgentCommerceGateway should only be used on the server side to protect your API key.");
         }
-        this.apiKey = apiKey;
+        this.apiKey = String(apiKey).trim().replace(/[^\x20-\x7E]/g, "");
         this.gatewayUrl = gatewayUrl.replace(/\/$/, "");
     }
 
