@@ -37,46 +37,47 @@ The gateway is built as a layered pipeline. Every layer has exactly one responsi
                          speaks ACP  ─────────┼───────── speaks x402 v2
                                               │
                     ┌─────────────────────────▼─────────────────────────┐
-                    │                PROTOCOL ADAPTER LAYER               │
-                    │                                                       │
-                    │     ACPAdapter                    X402Adapter        │
-                    │  (parses, validates)          (parses, validates)    │
+                    │                PROTOCOL ADAPTER LAYER             │
+                    │                                                   │
+                    │     ACPAdapter                    X402Adapter     │
+                    │  (parses, validates)          (parses, validates) │
                     └─────────────────────────┬─────────────────────────┘
                                               │
                                 normalized into
                                               │
                                               ▼
                               ┌───────────────────────────────┐
-                              │      CANONICAL COMMERCE        │
-                              │           REQUEST              │
-                              │  (protocol-independent model)  │
+                              │      CANONICAL COMMERCE       │
+                              │           REQUEST             │
+                              │  (protocol-independent model) │
                               └───────────────┬───────────────┘
                                               │
                     ┌─────────────────────────▼─────────────────────────┐
-                    │                  SECURITY PIPELINE                   │
-                    │                                                       │
-                    │   1. Schema Validation                               │
-                    │   2. Authorization (identity, scope, signature)      │
-                    │   3. Replay Protection (nonce / idempotency ledger)  │
-                    │   4. Merchant Policy Engine (limits, allow/deny)     │
+                    │                  SECURITY PIPELINE                │
+                    │                                                   │
+                    │   1. Schema Validation                            │
+                    │   2. Authorization (identity, scope, signature)   │
+                    │   3. Replay Protection (nonce /idempotency ledger)│
+                    │   4. Merchant Policy Engine (limits, allow/deny)  │
                     └─────────────────────────┬─────────────────────────┘
                                               │
                                     ┌─────────┴─────────┐
-                                    │                     │
+                                    │                   │
                                  BLOCK                 ALLOW
-                                    │                     │
+                                    │                   │
                               rejected, logged      forwarded to
                               never reaches                │
                                 Razorpay                   ▼
                                               ┌───────────────────────┐
-                                              │   RAZORPAY (TEST)      │
-                                              │   order creation and   │
-                                              │   settlement           │
+                                              │   RAZORPAY (TEST)     │
+                                              │   order creation and  │
+                                              │   settlement          │
                                               └───────────────────────┘
 ```
 
 **Design principle:** protocol diversity is a parsing problem, not an architecture problem. Everything downstream of the adapter layer — authorization, replay protection, policy, settlement — operates on one shape of data, regardless of whether the request arrived as ACP or x402. Adding a new protocol means writing a new adapter, not touching the security or payment core.
 
+## Workflow Architecture
 <p align="center">
   <img src="./public/Workflow.png" alt="AI Agent Commerce Gateway Workflow" width="92%">
 </p>
@@ -283,7 +284,7 @@ Every layer of the pipeline — adapters, canonical model, authorization, replay
 ### Clone
 
 ```bash
-git clone https://github.com/<your-username>/ai-agent-commerce-gateway.git
+git clone https://github.com/merajstack/ai-agent-commerce-gateway.git
 cd ai-agent-commerce-gateway
 ```
 
