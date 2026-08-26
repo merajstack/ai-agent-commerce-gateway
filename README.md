@@ -1,6 +1,6 @@
 <div align="center">
 
-# AI Agent Commerce Gateway
+# AI-Agent-Commerce-Gateway (Razorpay)
 
 ### Protocol-Agnostic Infrastructure for Agentic Commerce
 
