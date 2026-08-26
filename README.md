@@ -65,9 +65,9 @@ The gateway is built as a layered pipeline. Every layer has exactly one responsi
                                     │                   │
                                  BLOCK                 ALLOW
                                     │                   │
-                              rejected, logged      forwarded to
-                              never reaches                │
-                                Razorpay                   ▼
+                               rejected, logged      forwarded to
+                               never reaches                │
+                                 Razorpay                   ▼
                                               ┌───────────────────────┐
                                               │   RAZORPAY (TEST)     │
                                               │   order creation and  │
@@ -168,7 +168,7 @@ ai-agent-commerce-gateway/
 │
 ├── Demo-shopping-site/            AI-readable merchant storefront and cart
 │
-├── Ai Buyer/                      AI shopping agent and protocol request generation
+├── Ai-Buyer/                      AI shopping agent and protocol request generation
 │
 └── public/                        Architecture diagrams and product screenshots
     ├── Workflow.png
@@ -261,16 +261,6 @@ Every layer of the pipeline — adapters, canonical model, authorization, replay
 
 <br>
 
-## Explanation Video
-
-<p align="center">
-  <a href="https://www.drive.com">
-    <img src="/demo.png" alt="Explanation Video" width="90%">
-  </a>
-</p>
-
-<br>
-
 ## Cloning and Setup
 
 ### Requirements
@@ -295,10 +285,10 @@ cd agent-commerce-gateway
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-cd "../Ai Buyer"
+cd ../Ai-Buyer
 npm install
 
-cd "../Demo-shopping-site"
+cd ../Demo-shopping-site
 npm install
 ```
 
@@ -318,21 +308,21 @@ private keys
 
 ```bash
 cd agent-commerce-gateway && .venv/bin/pytest
-cd "../Ai Buyer" && npm test
-cd "../Demo-shopping-site" && npm test
+cd ../Ai-Buyer && npm test
+cd ../Demo-shopping-site && npm test
 ```
 
 ### Run Locally
 
 ```bash
 # Terminal 1 — Gateway
-cd agent-commerce-gateway && .venv/bin/python app.py
+cd agent-commerce-gateway && .venv/bin/python run.py
 
 # Terminal 2 — Demo Merchant Store
-cd Demo-shopping-site && npm run dev
+cd Demo-shopping-site && node server.js
 
 # Terminal 3 — AI Buyer
-cd "Ai Buyer" && npm run dev
+cd Ai-Buyer && node server.js
 ```
 
 <br>
