@@ -1,4 +1,3 @@
-````markdown
 <div align="center">
 
 # AI Agent Commerce Gateway
@@ -322,6 +321,3 @@ Payment Captured
 ### Built for the transition from human-driven checkout to agent-driven commerce.
 
 </div>
-```
-# ai-agent-commerce-gateway
-# ai-agent-commerce-gateway

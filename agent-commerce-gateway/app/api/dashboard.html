@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent Commerce Gateway — Merchant Dashboard</title>
+    <style>
+        :root {
+            --bg: #f9fafb;
+            --surface: #ffffff;
+            --text: #111827;
+            --text-muted: #6b7280;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .nav-item {
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: #eff6ff;
+            color: var(--primary);
+        }
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        .pre-code {
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .token-bar {
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            margin-top: auto;
+            font-size: 0.85rem;
+        }
+        .token-bar input {
+            width: 100%;
+            padding: 6px 8px;
+            margin-top: 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.8rem;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Merchant Gateway</h2>
+        <div class="nav-item active" onclick="showTab('overview')">Overview</div>
+        <div class="nav-item" onclick="showTab('settings')">Settings & Policy</div>
+        <div class="nav-item" onclick="showTab('integration')">API & Integration</div>
+        
+        <div class="token-bar">
+            <label style="font-weight: 600; color: var(--text-muted);">Dashboard Secret</label>
+            <input type="password" id="dash_token" placeholder="DASHBOARD_SECRET" onchange="saveToken(this.value)">
+            <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">Required for changes</small>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content">
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h3 style="margin-bottom: 4px;">Merchant Profile: <span id="m_name">Loading...</span></h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
+                        <strong>ID:</strong> <code id="m_id" style="background:#f1f5f9; padding: 2px 6px; border-radius: 4px;">Loading...</code> &nbsp;|&nbsp; 
+                        <strong>Gateway Engine:</strong> <span style="color: var(--success); font-weight: 700;">● Active (5-Stage Gated)</span> &nbsp;|&nbsp;
+                        <strong>Ledger:</strong> SQLite <code>audit_events</code>
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="loadTransactions()" style="background: #0f172a; font-size: 0.85rem; padding: 8px 14px;">⚡ Refresh Audit Log</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="margin: 0;">Gateway Audit Trail & Transaction Ledger</h3>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time immutable audit records</span>
+                </div>
+                <div id="tx-list">Loading audit events...</div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content hidden">
+            <div class="card">
+                <h3>Razorpay Test Mode Configuration</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+                    Enter your Razorpay test mode credentials. Secrets are stored securely in memory and never displayed.
+                </p>
+                <div class="form-group">
+                    <label>Key ID</label>
+                    <input type="text" id="rzp_key_id" placeholder="rzp_test_...">
+                </div>
+                <div class="form-group">
+                    <label>Key Secret</label>
+                    <input type="password" id="rzp_key_secret" placeholder="••••••••••••">
+                </div>
+                <button onclick="saveRazorpay()">Save Credentials</button>
+            </div>
+
+            <div class="card">
+                <h3>AI Commerce Policy</h3>
+                <div class="form-group">
+                    <label>Maximum Transaction Amount (Minor Units)</label>
+                    <input type="number" id="pol_max" placeholder="50000">
+                </div>
+                <div class="form-group">
+                    <label>Allowed Currency</label>
+                    <input type="text" id="pol_cur" placeholder="INR">
+                </div>
+                <div class="form-group">
+                    <label>Blocked Categories (Comma separated)</label>
+                    <input type="text" id="pol_blocks" placeholder="weapons,gambling">
+                </div>
+                <button onclick="savePolicy()">Save Policy</button>
+            </div>
+        </div>
+
+        <!-- Integration Tab -->
+        <div id="integration" class="tab-content hidden">
+            <div class="card">
+                <h3>API Key Generation</h3>
+                <p>Generate a new API key for your backend server. <strong style="color:var(--danger)">This key will only be shown once!</strong></p>
+                <button onclick="generateApiKey()">Generate New Key</button>
+                <div id="api-key-container" class="hidden" style="margin-top: 16px; padding: 16px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px;">
+                    <p style="margin: 0 0 8px 0; color: #065f46; font-weight: bold;">Your New Merchant API Key:</p>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="api-key-result" readonly style="font-family: monospace; font-weight: bold; background: white; color: #111827; flex: 1;">
+                        <button onclick="copyApiKey()" style="background: #059669; padding: 8px 14px;">Copy</button>
+                    </div>
+                    <small style="color: #047857; display: block; margin-top: 6px;">Add this key to your Merchant application (e.g. in Demo-shopping-site/.env as <code>MERCHANT_API_KEY</code>).</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Node.js Backend SDK Snippet</h3>
+                <div class="pre-code">
+class AgentCommerceGateway {
+    constructor(apiKey, gatewayUrl = process.env.GATEWAY_URL || "https://gateway.example.com") {
+        this.apiKey = apiKey; // Keep this on the server!
+        this.gatewayUrl = gatewayUrl;
+    }
+
+    async executeRequest(protocol, payload) {
+        const response = await fetch(`${this.gatewayUrl}/api/v1/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+            },
+            body: JSON.stringify({ protocol, raw_payload: payload })
+        });
+        return response.json();
+    }
+}
+// Example usage:
+// const gateway = new AgentCommerceGateway("sk_test_...");
+// const result = await gateway.executeRequest("acp", aiGeneratedPayload);
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getDashboardToken() {
+            return document.getElementById('dash_token').value || localStorage.getItem('dashboard_token') || 'secret_dashboard_token';
+        }
+
+        function saveToken(val) {
+            localStorage.setItem('dashboard_token', val);
+        }
+
+        // Initialize token field
+        const savedToken = localStorage.getItem('dashboard_token') || 'secret_dashboard_token';
+        document.getElementById('dash_token').value = savedToken;
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/dashboard/merchant');
+                if (!res.ok) throw new Error("Failed to load profile");
+                const data = await res.json();
+                document.getElementById('m_id').innerText = data.merchant_id;
+                document.getElementById('m_name').innerText = data.merchant_name;
+                
+                document.getElementById('rzp_key_id').value = data.razorpay_key_id || "";
+                document.getElementById('pol_max').value = data.max_transaction_amount || "";
+                document.getElementById('pol_cur').value = data.allowed_currency || "";
+                document.getElementById('pol_blocks').value = data.blocked_categories ? data.blocked_categories.join(",") : "";
+                
+                loadTransactions();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const res = await fetch('/api/dashboard/transactions');
+                if (!res.ok) return;
+                const txs = await res.json();
+                const list = document.getElementById('tx-list');
+                if (txs.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--text-muted); background: #f8fafc; border-radius: 8px; border: 1px dashed var(--border);">
+                            <p style="margin: 0; font-weight: 500;">No transactions recorded in the audit trail yet.</p>
+                            <small>Trigger a checkout intent from the storefront to see live audit logs.</small>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let tableHtml = `
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+                            <thead>
+                                <tr style="background: #f1f5f9; border-bottom: 2px solid var(--border); color: #475569;">
+                                    <th style="padding: 10px 12px;">Time</th>
+                                    <th style="padding: 10px 12px;">Stage & Event</th>
+                                    <th style="padding: 10px 12px;">Decision</th>
+                                    <th style="padding: 10px 12px;">Transaction / Order / Pay ID</th>
+                                    <th style="padding: 10px 12px;">Amount</th>
+                                    <th style="padding: 10px 12px;">Audit Details / Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                txs.forEach(tx => {
+                    const isAllow = tx.decision === 'ALLOW';
+                    const isBlock = tx.decision === 'BLOCK';
+                    const isUndecided = tx.decision === 'UNDECIDED';
+                    const badgeBg = isAllow ? '#dcfce7' : (isBlock ? '#fee2e2' : (isUndecided ? '#e0e7ff' : '#fef3c7'));
+                    const badgeColor = isAllow ? '#15803d' : (isBlock ? '#b91c1c' : (isUndecided ? '#3730a3' : '#b45309'));
+                    const formattedTime = new Date(tx.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                    const amountDisplay = tx.amount_minor ? `₹${(tx.amount_minor / 100).toLocaleString('en-IN')}` : '-';
+                    const orderDisplay = tx.razorpay_order_id ? `<code style="background:#eff6ff; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color:#2563eb;">${tx.razorpay_order_id}</code>` : (tx.transaction_id ? `<code style="font-size:0.8rem; color:#64748b;">${tx.transaction_id}</code>` : '-');
+                    const paymentDisplay = tx.razorpay_payment_id ? `<br><small style="color:#059669; font-weight:700;">💳 Pay ID: ${tx.razorpay_payment_id}</small>` : '';
+
+                    tableHtml += `
+                        <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s;">
+                            <td style="padding: 10px 12px; white-space: nowrap; color: #64748b;"><small>${formattedTime}</small></td>
+                            <td style="padding: 10px 12px;"><span style="background: #e2e8f0; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">${tx.stage}</span> <small style="color: #64748b;">(${tx.event_type})</small></td>
+                            <td style="padding: 10px 12px;"><span style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 800; font-size: 0.8rem; padding: 3px 10px; border-radius: 9999px;">${tx.decision || 'INFO'}</span></td>
+                            <td style="padding: 10px 12px;">${orderDisplay}${paymentDisplay}</td>
+                            <td style="padding: 10px 12px; font-weight: 700; color: #0f172a;">${amountDisplay}</td>
+                            <td style="padding: 10px 12px; color: #334155;"><small>${tx.reason || '-'}</small></td>
+                        </tr>
+                    `;
+                });
+                
+                tableHtml += `</tbody></table></div>`;
+                list.innerHTML = tableHtml;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Periodic auto-refresh every 3 seconds for live audit monitoring
+        setInterval(() => {
+            const overviewEl = document.getElementById('overview');
+            if (overviewEl && !overviewEl.classList.contains('hidden')) {
+                loadTransactions();
+            }
+        }, 3000);
+
+        async function saveRazorpay() {
+            const key_id = document.getElementById('rzp_key_id').value.trim();
+            const key_secret = document.getElementById('rzp_key_secret').value.trim();
+            
+            if (!key_id || !key_secret) {
+                alert('Please enter both Razorpay Key ID and Key Secret.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/dashboard/merchant/razorpay', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Dashboard-Token': getDashboardToken()
+                    },
+                    body: JSON.stringify({
+                        key_id: key_id,
+                        key_secret: key_secret
+                    })
+                });
+                
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Error saving credentials: ' + (data.detail || 'Unknown error'));
+                    return;
+                }
+                alert('Razorpay credentials saved securely.');
+                document.getElementById('rzp_key_secret').value = ""; // clear from UI
+            } catch (err) {
+                alert('Network or server error: ' + err.message);
+            }
+        }
+
+        async function savePolicy() {
+            const blocks = document.getElementById('pol_blocks').value;
+            try {
+                const res = await fetch('/api/dashboard/merchant/policy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Dashboard-Token': getDashboardToken()
+                    },
+                    body: JSON.stringify({
+                        max_transaction_amount: parseInt(document.getElementById('pol_max').value) || null,
+                        allowed_currency: document.getElementById('pol_cur').value || null,
+                        blocked_categories: blocks ? blocks.split(",").map(s => s.trim()) : []
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Error saving policy: ' + (data.detail || 'Unknown error'));
+                    return;
+                }
+                alert('Policy saved successfully.');
+            } catch (err) {
+                alert('Network or server error: ' + err.message);
+            }
+        }
+
+        async function generateApiKey() {
+            if(!confirm("This will invalidate your old API key. Proceed?")) return;
+            try {
+                const res = await fetch('/api/dashboard/merchant/api-key', { 
+                    method: 'POST',
+                    headers: {
+                        'X-Dashboard-Token': getDashboardToken()
+                    }
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Error generating API key: ' + (data.detail || 'Unknown error'));
+                    return;
+                }
+                
+                const container = document.getElementById('api-key-container');
+                const resultInput = document.getElementById('api-key-result');
+                container.classList.remove('hidden');
+                resultInput.value = data.api_key;
+                resultInput.select();
+                alert(data.message || 'API key generated successfully!');
+            } catch (err) {
+                alert('Network or server error: ' + err.message);
+            }
+        }
+
+        function copyApiKey() {
+            const input = document.getElementById('api-key-result');
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert('API key copied to clipboard!');
+            }).catch(() => {
+                input.select();
+                document.execCommand('copy');
+                alert('API key copied!');
+            });
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Buyer — Autonomous Commerce Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Razorpay Standard Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="chatgpt-theme">
+  <div class="viewport-root">
+    
+    <!-- Left Sidebar (ChatGPT-style) -->
+    <aside class="sidebar-left" id="sidebar-left">
+      <div class="sidebar-header">
+        <button class="btn-new-chat" onclick="startNewChat()">
+          <span class="icon">+</span>
+          <span>New shopping chat</span>
+        </button>
+      </div>
+
+      <div class="sidebar-scrollable">
+        <div class="sidebar-section-title">Catalog Categories</div>
+        <div class="category-pills">
+          <button class="cat-pill" onclick="sendPrompt('Show running shoes')">🏃 Running</button>
+          <button class="cat-pill" onclick="sendPrompt('Show casual sneakers')">👟 Casual</button>
+          <button class="cat-pill" onclick="sendPrompt('Show outdoor and waterproof shoes')">🥾 Outdoor</button>
+          <button class="cat-pill" onclick="sendPrompt('Show basketball shoes')">🏀 Basketball</button>
+          <button class="cat-pill" onclick="sendPrompt('Show formal leather shoes')">👞 Formal</button>
+        </div>
+
+        <div class="sidebar-section-title">Suggested Prompts</div>
+        <div class="quick-prompts">
+          <button class="prompt-item" onclick="sendPrompt('Find shoes under ₹5,000 and buy the best one')">
+            <span class="prompt-title">👟 Find Shoes &lt; ₹5K &amp; Buy</span>
+          </button>
+          <button class="prompt-item" onclick="sendPrompt('Get 3 AeroGlide Runner, tell me the total')">
+            <span class="prompt-title">💰 Price Quote (3x AeroGlide)</span>
+          </button>
+          <button class="prompt-item" onclick="sendPrompt('Show all shoes sorted from lowest to highest price')">
+            <span class="prompt-title">🏷️ Compare Catalog by Price</span>
+          </button>
+          <button class="prompt-item" onclick="sendPrompt('Buy the Leather Oxford Elite in size 10')">
+            <span class="prompt-title">🛑 Test Policy Limit Block (&gt; ₹10k)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="system-status-box">
+          <div class="status-row">
+            <span class="status-indicator online"></span>
+            <span>Gateway Active (/api/v1/execute)</span>
+          </div>
+          <div class="status-row">
+            <span class="status-indicator online"></span>
+            <span>Storefront Connected</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Main Chat Viewport -->
+    <main class="chat-main">
+      
+      <!-- Minimalist Top Navigation -->
+      <nav class="chat-navbar">
+        <div class="navbar-left">
+          <button class="btn-icon" id="toggle-sidebar-btn" onclick="toggleLeftSidebar()" title="Toggle Sidebar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+          <div class="model-badge">
+            <span class="sparkle-icon">✨</span>
+            <span class="model-name">AI Shopping Agent</span>
+          </div>
+        </div>
+
+        <div class="navbar-right">
+          <!-- 3-Panel Inspector Launch Button -->
+          <button class="btn-nav-pill highlight-pill" onclick="openNormalizationModal()" id="nav-inspect-3panel-btn" title="Open Live 3-Panel Normalization Inspector">
+            <span class="pulse-dot"></span>
+            <span>🔍 3-Panel Inspector</span>
+          </button>
+
+          <button class="btn-nav-pill" onclick="toggleInspector('cart')" id="nav-cart-btn">
+            <span>🛒</span>
+            <span id="nav-cart-count">0 items</span>
+            <strong id="nav-cart-total">₹0</strong>
+          </button>
+          <button class="btn-nav-pill active-glow" onclick="toggleInspector('protocol')" id="nav-inspector-btn">
+            <span id="nav-protocol-icon">⚡</span>
+            <span id="nav-protocol-badge">ACP 2026</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Chat Scroll Stream Container -->
+      <div class="chat-stream-container" id="chat-stream">
+        <div class="chat-inner-width">
+          
+          <!-- ChatGPT Welcome State -->
+          <div class="welcome-hero" id="welcome-hero">
+            <div class="welcome-avatar">🤖</div>
+            <h1 class="welcome-title">How can I help you shop today?</h1>
+            <p class="welcome-desc">I search merchant catalogs, compare prices, manage your cart, and generate verified <strong>ACP 2026</strong> & <strong>x402 v2</strong> protocol requests to normalize into canonical <code>CommerceRequest</code> and authorize via the Agent Commerce Gateway.</p>
+
+            <div class="hero-grid">
+              <div class="hero-card" onclick="sendPrompt('Find shoes under ₹5,000 and buy the best one')">
+                <div class="hero-card-title">👟 Find Shoes &lt; ₹5,000 &amp; Buy</div>
+                <div class="hero-card-subtitle">AI discovers, adds to cart, and prepares checkout</div>
+              </div>
+              <div class="hero-card" onclick="sendPrompt('Get 3 AeroGlide Runner, tell me the total.')">
+                <div class="hero-card-title">📊 3x AeroGlide Runner Price Quote</div>
+                <div class="hero-card-subtitle">Calculates total without immediate checkout</div>
+              </div>
+              <div class="hero-card" onclick="sendPrompt('Show all casual sneakers in size 9')">
+                <div class="hero-card-title">👟 Casual Sneakers (Size 9)</div>
+                <div class="hero-card-subtitle">Inspect stock and add to merchant cart</div>
+              </div>
+              <div class="hero-card" onclick="sendPrompt('What products are currently in stock?')">
+                <div class="hero-card-title">📦 Check Full Live Catalog</div>
+                <div class="hero-card-subtitle">Query merchant inventory in real-time</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Chat Message Thread -->
+          <div class="message-thread" id="message-thread"></div>
+        </div>
+      </div>
+
+      <!-- Floating Minimalist Input Box (ChatGPT-style) -->
+      <div class="chat-input-area">
+        <div class="chat-inner-width">
+          <form class="input-pill-box" id="chat-form" onsubmit="handleChatSubmit(event)">
+            
+            <!-- Protocol Dropdown Pill -->
+            <div class="protocol-dropdown-pill" id="protocol-pill-container">
+              <span class="protocol-label">Protocol</span>
+              <select id="protocol-select" class="protocol-select" onchange="onProtocolChange(event)">
+                <option value="acp" selected>⚡ ACP (RFC 2026-01-16)</option>
+                <option value="x402">🔗 x402 v2 (HTTP 402 / Base Sepolia)</option>
+              </select>
+            </div>
+
+            <!-- Main Input Field -->
+            <input 
+              type="text" 
+              id="user-input" 
+              class="user-text-input" 
+              placeholder="Ask to find shoes, compare prices, or checkout..." 
+              autocomplete="off" 
+              required
+            />
+
+            <!-- Send Button -->
+            <button type="submit" id="send-btn" class="btn-send-round" title="Send message">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </form>
+
+          <div class="input-caption">
+            <span id="active-protocol-caption">Active Protocol: <strong>ACP 2026</strong> — Authoritative Agentic Commerce Protocol</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Slide-Over / Split Commerce Inspector -->
+    <aside class="inspector-drawer" id="inspector-drawer">
+      <div class="inspector-header">
+        <div class="inspector-title-row">
+          <span class="inspector-heading">Commerce Inspector</span>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button class="btn-action-small" onclick="openNormalizationModal()" title="Expand 3-Panel View">⛶ 3-Panel</button>
+            <button class="btn-close-drawer" onclick="toggleInspector()" title="Close Inspector">✕</button>
+          </div>
+        </div>
+        <div class="inspector-tabs-nav">
+          <button class="nav-tab active" id="tab-btn-protocol" onclick="switchDrawerTab('protocol')">Raw Protocol</button>
+          <button class="nav-tab" id="tab-btn-gateway" onclick="switchDrawerTab('gateway')">Canonical &amp; Gate</button>
+          <button class="nav-tab" id="tab-btn-cart" onclick="switchDrawerTab('cart')">Cart</button>
+        </div>
+      </div>
+
+      <div class="inspector-body">
+        
+        <!-- Tab 1: Protocol Payload View -->
+        <div class="drawer-pane active" id="pane-protocol">
+          <div class="pane-card">
+            <div class="pane-card-header">
+              <span class="pane-title">Outgoing Protocol Request</span>
+              <span class="pill-badge" id="drawer-protocol-badge">ACP 2026</span>
+            </div>
+            <p class="pane-subtext">Constructed directly by the AI Buyer according to authoritative protocol specifications.</p>
+            
+            <div class="code-viewport">
+              <div class="code-viewport-top">
+                <span class="code-tag" id="drawer-code-tag">RAW RFC JSON</span>
+                <button class="btn-copy-code" onclick="copyProtocolJson()">📋 Copy</button>
+              </div>
+              <pre id="raw-protocol-json"><code>// No protocol request generated yet.
+// Ask the agent to find shoes and checkout to see the live payload.</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Gateway Security Pipeline & Canonical -->
+        <div class="drawer-pane" id="pane-gateway">
+          <div class="pane-card">
+            <div class="pane-card-header">
+              <span class="pane-title">Gateway Decision</span>
+              <span class="decision-badge neutral" id="gateway-decision-badge">PENDING</span>
+            </div>
+
+            <!-- Pipeline Stages Progression -->
+            <div class="pipeline-steps-container" id="pipeline-stages-list">
+              <div class="pipeline-step inactive">
+                <div class="step-num">1</div>
+                <div class="step-info">
+                  <strong>REQUEST</strong>
+                  <span>Protocol Ingestion</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">2</div>
+                <div class="step-info">
+                  <strong>PROTOCOL ADAPTER</strong>
+                  <span>Canonical Normalization</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">3</div>
+                <div class="step-info">
+                  <strong>CANONICAL NORMALIZATION</strong>
+                  <span>CommerceRequest Construction</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">4</div>
+                <div class="step-info">
+                  <strong>AUTHORIZATION</strong>
+                  <span>Cryptographic Mandate / Proof Check</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">5</div>
+                <div class="step-info">
+                  <strong>REPLAY DEFENSE</strong>
+                  <span>Atomic Nonce Lock</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">6</div>
+                <div class="step-info">
+                  <strong>MERCHANT POLICY</strong>
+                  <span>Ceiling &amp; Category Check</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">7</div>
+                <div class="step-info">
+                  <strong>GATEWAY DECISION</strong>
+                  <span>ALLOW / BLOCK Evaluation</span>
+                </div>
+              </div>
+              <div class="pipeline-step inactive">
+                <div class="step-num">8</div>
+                <div class="step-info">
+                  <strong>RAZORPAY TEST ORDER</strong>
+                  <span>Created ONLY on ALLOW</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canonical JSON Accordion -->
+            <div class="accordion-box">
+              <button class="btn-accordion" onclick="toggleCanonicalExpand()">
+                <span>📐 Normalized Canonical Request</span>
+                <span id="canonical-chevron">▼</span>
+              </button>
+              <div class="accordion-content hidden" id="canonical-accordion-content">
+                <pre id="canonical-json-display"><code>// Canonical JSON will appear after Gateway normalization</code></pre>
+              </div>
+            </div>
+
+            <!-- Order / Payment Handoff Box -->
+            <div class="order-created-card hidden" id="order-handoff-box">
+              <div class="order-card-header">🎉 Razorpay Test Order Ready</div>
+              <div class="order-id-row">
+                <span class="lbl">Order ID:</span>
+                <code class="val" id="handoff-order-id">-</code>
+              </div>
+              <div id="inspector-pay-btn-container" style="margin-top: 8px;"></div>
+              <p class="order-subtext" style="margin-top: 6px;">Authorized by Agent Commerce Gateway. Click Pay to open Razorpay Checkout.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Storefront Cart -->
+        <div class="drawer-pane" id="pane-cart">
+          <div class="pane-card">
+            <div class="pane-card-header">
+              <span class="pane-title">Storefront Cart</span>
+              <button class="btn-text-danger" onclick="clearCart()">Clear</button>
+            </div>
+
+            <div class="cart-items-scroll" id="cart-items-container">
+              <div class="empty-cart-notice">Cart is currently empty.</div>
+            </div>
+
+            <div class="cart-footer-box">
+              <div class="cart-total-line">
+                <span>Subtotal:</span>
+                <strong id="cart-subtotal-val">₹0</strong>
+              </div>
+              <button class="btn-action-primary" id="btn-cart-checkout-action" onclick="sendPrompt('Checkout with ' + document.getElementById('protocol-select').value)">
+                ⚡ Checkout with Active Protocol
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════ -->
+  <!-- JUDGE-FACING LIVE 3-PANEL NORMALIZATION INSPECTOR MODAL                    -->
+  <!-- ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="normalization-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="normalization-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-inspector-title">
+      
+      <!-- Top Inspector Header Bar -->
+      <div class="modal-top-bar">
+        <div class="modal-top-left">
+          <div class="modal-badge-icon" id="modal-protocol-icon">⚡</div>
+          <div>
+            <div class="modal-title-row">
+              <h2 id="modal-inspector-title">Protocol Normalization Inspector</h2>
+              <span class="protocol-identity-pill protocol-acp" id="modal-protocol-badge">ACP 2026</span>
+              <span class="adapter-identity-pill" id="modal-adapter-badge">ACPAdapter</span>
+              <span class="decision-pill" id="modal-decision-badge">PENDING</span>
+            </div>
+            <p class="modal-subtitle" id="modal-protocol-subtitle">Proving incoming protocol payload maps deterministically into unified canonical CommerceRequest</p>
+          </div>
+        </div>
+
+        <div class="modal-top-right">
+          <div class="timestamp-box" id="modal-timestamp-box">
+            <span class="time-label">Processed:</span>
+            <span class="time-val" id="modal-timestamp-val">Just now</span>
+          </div>
+          <button class="btn-close-modal" onclick="closeNormalizationModal()" title="Close Inspector">✕</button>
+        </div>
+      </div>
+
+      <!-- 3-PANEL GRID CONTAINER -->
+      <div class="three-panel-grid" id="three-panel-container">
+        
+        <!-- PANEL 1: RAW INCOMING PROTOCOL -->
+        <div class="panel-column panel-raw" id="panel-raw-col">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-step-badge">PANEL 1</span>
+              <h3 class="panel-title">Raw Protocol Request</h3>
+            </div>
+            <button class="btn-panel-copy" onclick="copyRawProtocolJson()">📋 Copy JSON</button>
+          </div>
+          <div class="panel-desc" id="panel-raw-desc">
+            Exact wire payload transmitted by AI Buyer according to protocol specification.
+          </div>
+
+          <!-- Protocol Specific Envelope Tags -->
+          <div class="protocol-field-highlights" id="raw-field-chips">
+            <!-- Dynamic field tags injected by JS -->
+          </div>
+
+          <div class="panel-code-box">
+            <pre id="modal-raw-json"><code>// Awaiting transaction execution...</code></pre>
+          </div>
+        </div>
+
+        <!-- PANEL 2: NORMALIZED CANONICAL REQUEST -->
+        <div class="panel-column panel-canonical" id="panel-canonical-col">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-step-badge canonical-badge">PANEL 2</span>
+              <h3 class="panel-title">Canonical CommerceRequest</h3>
+            </div>
+            <button class="btn-panel-copy" onclick="copyCanonicalJson()">📋 Copy JSON</button>
+          </div>
+          <div class="panel-desc">
+            Gateway canonical schema — <strong>100% IDENTICAL</strong> structure for ACP &amp; x402.
+          </div>
+
+          <!-- Field Mapping Highlights Table -->
+          <div class="mapping-table-wrap">
+            <div class="mapping-table-header">🔗 Protocol → Canonical Field Mapping</div>
+            <div class="mapping-rows-container" id="modal-mapping-rows">
+              <!-- Dynamically rendered mapping rows -->
+            </div>
+          </div>
+
+          <div class="panel-code-box">
+            <pre id="modal-canonical-json"><code>// Normalized CommerceRequest JSON will appear here...</code></pre>
+          </div>
+        </div>
+
+        <!-- PANEL 3: SECURITY PIPELINE & POLICY GATING -->
+        <div class="panel-column panel-pipeline" id="panel-pipeline-col">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-step-badge security-badge">PANEL 3</span>
+              <h3 class="panel-title">Security Pipeline</h3>
+            </div>
+            <span class="live-security-tag">🛡️ Gateway Core</span>
+          </div>
+          <div class="panel-desc">
+            Deterministic security stages executed before Razorpay Sandbox order creation.
+          </div>
+
+          <!-- Real Backend Pipeline Stages -->
+          <div class="modal-pipeline-stages" id="modal-pipeline-stages-list">
+            <!-- Dynamically populated from backend pipeline_stages -->
+          </div>
+
+          <!-- Gateway Final Decision & Order Box -->
+          <div class="modal-decision-banner" id="modal-decision-banner">
+            <div class="decision-banner-status" id="modal-decision-banner-status">⚡ GATEWAY DECISION: ALLOW</div>
+            <div class="decision-banner-reason" id="modal-decision-banner-reason">All security checks passed. Authorized by Gateway.</div>
+            <div class="modal-order-handoff-row hidden" id="modal-order-handoff-row">
+              <div class="order-id-display">
+                <span>Razorpay Order:</span>
+                <code id="modal-razorpay-order-id">order_...</code>
+              </div>
+              <div id="modal-pay-button-wrap"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer-bar">
+        <div class="footer-summary-text" id="modal-footer-summary">
+          💡 <strong>Visibly Provable Normalization</strong>: Both ACP and x402 produce the exact same canonical schema before authorization and policy checks.
+        </div>
+        <div class="footer-actions">
+          <button class="btn-modal-dismiss" onclick="closeNormalizationModal()">Close Inspector</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

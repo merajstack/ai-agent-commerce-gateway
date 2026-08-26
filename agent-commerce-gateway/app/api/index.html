@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Commerce Gateway - Console</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        h2 { margin-top: 0; font-size: 1.2rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted); }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #2563eb; }
+        
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            justify-content: center;
+            gap: 10px;
+        }
+        .stage {
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            width: 80%;
+            text-align: center;
+            font-weight: bold;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+        .stage.passed { border-color: var(--success); color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .stage.blocked { border-color: var(--error); color: var(--error); background: rgba(239, 68, 68, 0.1); }
+        .stage.review { border-color: var(--warning); color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .arrow { font-size: 24px; color: var(--border); }
+        
+        .decision-card {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid var(--border);
+            background: var(--bg);
+        }
+        .decision-card h1 { margin: 0 0 10px 0; }
+        
+        .audit-log {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .audit-event {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .audit-event:last-child { border-bottom: none; }
+        .audit-time { color: var(--primary); }
+        .audit-stage { font-weight: bold; }
+        
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .tag.allow { background: var(--success); color: white; }
+        .tag.block { background: var(--error); color: white; }
+        .tag.review { background: var(--warning); color: white; }
+        
+        #checkout-container {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Panel: Configuration -->
+    <div class="panel">
+        <h2>Merchant Config</h2>
+        <div class="form-group">
+            <label>Merchant ID</label>
+            <input type="text" id="merchant_id" value="merch-demo-123">
+        </div>
+        <div class="form-group">
+            <label>Currency</label>
+            <input type="text" id="currency" value="INR" disabled>
+        </div>
+        <div class="form-group">
+            <label>Spending Limit (minor units)</label>
+            <input type="number" id="merchant_limit" value="1000000"> <!-- 10,000 INR -->
+        </div>
+        <div class="form-group">
+            <label>Blocked Categories (comma sep)</label>
+            <input type="text" id="blocked_categories" value="weapons,gambling">
+        </div>
+        
+        <hr style="border-color: var(--border); margin: 20px 0;">
+
+        <h2>AI Buyer Simulator</h2>
+        <div class="form-group">
+            <label>Protocol</label>
+            <select id="protocol">
+                <option value="acp">ACP</option>
+                <option value="x402">x402</option>
+                <option value="ap2">AP2</option>
+                <option value="uap">UAP</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Buyer ID</label>
+            <input type="text" id="buyer_id" value="agent-8842">
+        </div>
+        <div class="form-group">
+            <label>Product Category</label>
+            <input type="text" id="item_name" value="electronics">
+        </div>
+        <div class="form-group">
+            <label>Amount (minor units)</label>
+            <input type="number" id="amount_minor" value="50000"> <!-- 500 INR -->
+        </div>
+        
+        <div class="form-group" style="margin-top: 10px;">
+            <label>
+                <input type="checkbox" id="authorization_valid" checked> Valid Authorization Signature
+            </label>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="is_replay"> Simulate Replay Attack
+            </label>
+        </div>
+
+        <button onclick="attemptPurchase()">Attempt Purchase</button>
+        
+        <div style="margin-top: 20px;">
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Quick Scenarios:</p>
+            <button style="background: var(--border); font-size: 0.8rem;" onclick="setScenario('legit')">1. Legitimate (ALLOW)</button>
+            <button style="background: var(--border); font-size: 0.8rem;" onclick="setScenario('limit')">2. Exceeds Limit (BLOCK)</button>
+            <button style="background: var(--border); font-size: 0.8rem;" onclick="setScenario('category')">3. Blocked Category (BLOCK)</button>
+            <button style="background: var(--border); font-size: 0.8rem;" onclick="setScenario('auth')">4. Invalid Auth (BLOCK)</button>
+        </div>
+    </div>
+
+    <!-- Center Panel: Pipeline & Result -->
+    <div class="panel">
+        <h2>Security Pipeline</h2>
+        <div class="pipeline" id="pipeline">
+            <div class="stage" id="stage-REQUEST">CommerceRequest</div>
+            <div class="arrow">↓</div>
+            <div class="stage" id="stage-AUTHORIZATION">Authorization</div>
+            <div class="arrow">↓</div>
+            <div class="stage" id="stage-REPLAY">Replay Protection</div>
+            <div class="arrow">↓</div>
+            <div class="stage" id="stage-POLICY">Merchant Policy</div>
+            <div class="arrow">↓</div>
+            <div class="stage" id="stage-EXECUTION">Razorpay Execution</div>
+        </div>
+
+        <div class="decision-card" id="decision-card">
+            <h1 id="decision-text" style="color: var(--text-muted);">WAITING</h1>
+            <p id="decision-reason">Submit a transaction to begin.</p>
+        </div>
+
+        <div id="checkout-container">
+            <button id="rzp-button" style="background: #10b981; font-size: 1.1rem; padding: 15px;">Complete Payment with Razorpay</button>
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">(Razorpay Test Mode)</p>
+        </div>
+    </div>
+
+    <!-- Right Panel: Audit Trail -->
+    <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Audit Trail</h2>
+            <button style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin: 0;" onclick="fetchAudit()">Refresh</button>
+        </div>
+        <div class="audit-log" id="audit-log">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+
+    <script>
+        let rzpConfig = {};
+        let currentOrder = null;
+        let usedNonceSim = false;
+
+        // Fetch config on load
+        fetch('/api/demo/config').then(r => r.json()).then(data => {
+            rzpConfig.key_id = data.razorpay_key_id;
+        });
+
+        function setScenario(type) {
+            document.getElementById('authorization_valid').checked = true;
+            document.getElementById('is_replay').checked = false;
+            document.getElementById('item_name').value = 'electronics';
+            document.getElementById('amount_minor').value = 50000;
+            
+            if (type === 'legit') {
+                // defaults
+            } else if (type === 'limit') {
+                document.getElementById('amount_minor').value = 2000000; // 20k INR > limit
+            } else if (type === 'category') {
+                document.getElementById('item_name').value = 'weapons';
+            } else if (type === 'auth') {
+                document.getElementById('authorization_valid').checked = false;
+            }
+        }
+
+        function resetStages() {
+            document.querySelectorAll('.stage').forEach(el => {
+                el.className = 'stage';
+            });
+            document.getElementById('decision-card').style.borderColor = 'var(--border)';
+            document.getElementById('decision-text').innerText = 'PROCESSING...';
+            document.getElementById('decision-text').style.color = 'var(--text)';
+            document.getElementById('decision-reason').innerText = '';
+            document.getElementById('checkout-container').style.display = 'none';
+        }
+
+        function updateStage(stageName, status) {
+            const el = document.getElementById(`stage-${stageName}`);
+            if (el) {
+                el.className = `stage ${status.toLowerCase()}`;
+            }
+        }
+
+        async function attemptPurchase() {
+            resetStages();
+            
+            const payload = {
+                buyer_id: document.getElementById('buyer_id').value,
+                merchant_id: document.getElementById('merchant_id').value,
+                protocol: document.getElementById('protocol').value,
+                item_name: document.getElementById('item_name').value,
+                quantity: 1,
+                amount_minor: parseInt(document.getElementById('amount_minor').value),
+                currency: document.getElementById('currency').value,
+                merchant_limit: parseInt(document.getElementById('merchant_limit').value),
+                blocked_categories: document.getElementById('blocked_categories').value ? document.getElementById('blocked_categories').value.split(',').map(s => s.trim()).filter(s => s) : [],
+                authorization_valid: document.getElementById('authorization_valid').checked
+            };
+            
+            const isReplay = document.getElementById('is_replay').checked;
+            
+            // To properly simulate Replay failure in the demo without breaking the orchestrator rules,
+            // we will intercept it in the payload. Wait, for the demo we can just let it run.
+            // A true replay means same transaction ID. We let the backend generate unique ones usually.
+            // If is_replay is true, we should pass a specific flag or do two identical calls.
+            // For simplicity, if the user wants an auth fail, it's in the payload.
+            // If they want replay, we'll just mock the replay store failure on backend via a flag.
+            // Since we didn't add a flag to the backend yet, let's just use the normal flow and demonstrate policy/auth.
+            // Actually, we can just send the same transaction ID twice. Let's do that!
+            
+            let txId = null;
+            if (isReplay && usedNonceSim) {
+                 txId = usedNonceSim;
+            }
+
+            try {
+                const response = await fetch('/api/demo/purchase' + (txId ? `?force_txn=${txId}` : ''), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                // Save for replay sim
+                usedNonceSim = data.transaction_id;
+                
+                // Visualization based on stage
+                updateStage('REQUEST', 'passed');
+                
+                if (data.stage === 'VALIDATION') {
+                    updateStage('AUTHORIZATION', 'blocked');
+                } else if (data.stage === 'AUTHORIZATION') {
+                    if (data.decision === 'BLOCK') updateStage('AUTHORIZATION', 'blocked');
+                    else updateStage('AUTHORIZATION', 'passed');
+                } else if (data.stage === 'REPLAY') {
+                    updateStage('AUTHORIZATION', 'passed');
+                    if (data.decision === 'BLOCK') updateStage('REPLAY', 'blocked');
+                    else updateStage('REPLAY', 'passed');
+                } else if (data.stage === 'POLICY' || data.stage === 'FINAL') {
+                    updateStage('AUTHORIZATION', 'passed');
+                    updateStage('REPLAY', 'passed');
+                    if (data.decision === 'BLOCK') updateStage('POLICY', 'blocked');
+                    else if (data.decision === 'REVIEW') updateStage('POLICY', 'review');
+                    else updateStage('POLICY', 'passed');
+                }
+                
+                if (data.decision === 'ALLOW') {
+                    if (data.receipt_status === 'order_created') {
+                        updateStage('EXECUTION', 'passed');
+                        document.getElementById('checkout-container').style.display = 'block';
+                        currentOrder = {
+                            id: data.razorpay_order_id,
+                            amount: payload.amount_minor,
+                            currency: payload.currency
+                        };
+                    } else {
+                        updateStage('EXECUTION', 'blocked');
+                    }
+                } else {
+                    updateStage('EXECUTION', '');
+                }
+
+                // Decision Card
+                const dCard = document.getElementById('decision-card');
+                const dText = document.getElementById('decision-text');
+                dText.innerText = data.decision;
+                document.getElementById('decision-reason').innerText = data.reason;
+                
+                if (data.decision === 'ALLOW') {
+                    dCard.style.borderColor = 'var(--success)';
+                    dText.style.color = 'var(--success)';
+                } else if (data.decision === 'BLOCK') {
+                    dCard.style.borderColor = 'var(--error)';
+                    dText.style.color = 'var(--error)';
+                } else if (data.decision === 'REVIEW') {
+                    dCard.style.borderColor = 'var(--warning)';
+                    dText.style.color = 'var(--warning)';
+                }
+                
+                fetchAudit();
+                
+            } catch (err) {
+                console.error(err);
+                alert("Error calling backend");
+            }
+        }
+        
+        document.getElementById('rzp-button').onclick = function(e){
+            if (!currentOrder || !rzpConfig.key_id) return;
+            
+            var options = {
+                "key": rzpConfig.key_id, // Front-end receives ONLY the public key
+                "amount": currentOrder.amount,
+                "currency": currentOrder.currency,
+                "name": "Agent Commerce Gateway",
+                "description": "AI Buyer Purchase",
+                "order_id": currentOrder.id,
+                "handler": async function (response) {
+                    // Send to backend for verify & capture
+                    const res = await fetch('/api/demo/payment/verify', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount_minor: currentOrder.amount,
+                            currency: currentOrder.currency
+                        })
+                    });
+                    const verifyData = await res.json();
+                    if (verifyData.is_success) {
+                        document.getElementById('decision-text').innerText = 'PAYMENT CAPTURED';
+                        document.getElementById('decision-reason').innerText = 'Razorpay signature verified and payment captured.';
+                        document.getElementById('checkout-container').style.display = 'none';
+                        fetchAudit();
+                    } else {
+                        alert("Payment verification failed: " + verifyData.error_code);
+                    }
+                },
+                "theme": {
+                    "color": "#3b82f6"
+                }
+            };
+            var rzp1 = new Razorpay(options);
+            rzp1.on('payment.failed', function (response){
+                alert("Payment Failed: " + response.error.description);
+            });
+            rzp1.open();
+            e.preventDefault();
+        }
+
+        async function fetchAudit() {
+            try {
+                const res = await fetch('/api/demo/audit');
+                const data = await res.json();
+                const logEl = document.getElementById('audit-log');
+                logEl.innerHTML = '';
+                
+                data.forEach(evt => {
+                    const div = document.createElement('div');
+                    div.className = 'audit-event';
+                    
+                    let tagClass = '';
+                    if(evt.decision === 'ALLOW') tagClass = 'allow';
+                    if(evt.decision === 'BLOCK') tagClass = 'block';
+                    if(evt.decision === 'REVIEW') tagClass = 'review';
+                    
+                    const time = new Date(evt.timestamp).toLocaleTimeString();
+                    
+                    div.innerHTML = `
+                        <div><span class="audit-time">[${time}]</span> <span class="audit-stage">${evt.stage}</span></div>
+                        <div style="margin-top:4px;">
+                            ${evt.decision ? `<span class="tag ${tagClass}">${evt.decision}</span>` : ''} 
+                            ${evt.reason}
+                        </div>
+                        ${evt.razorpay_order_id ? `<div style="color:var(--primary); margin-top:4px;">Order: ${evt.razorpay_order_id}</div>` : ''}
+                    `;
+                    logEl.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Failed to fetch audit log", err);
+            }
+        }
+        
+        // Initial fetch
+        fetchAudit();
+    </script>
+</body>
+</html>

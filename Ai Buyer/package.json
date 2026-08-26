@@ -1,0 +1,28 @@
+{
+  "name": "ai-buyer",
+  "version": "1.0.0",
+  "description": "Standalone AI Shopping Agent communicating via genuine commerce protocols (ACP 2026, x402, AP2)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "ai-agent",
+    "commerce",
+    "acp",
+    "x402",
+    "ap2"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

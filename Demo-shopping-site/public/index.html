@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Footwear — Premium Footwear Store</title>
+  <meta name="description"
+    content="Discover premium footwear powered by the Agent Commerce Gateway & Razorpay test orders.">
+
+  <!-- Premium Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Modern Design System Stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo" id="brand-logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+        <span>Apex Footwear</span>
+        <span class="logo-badge">ACP 2026</span>
+      </a>
+
+      <nav aria-label="Main navigation">
+        <ul class="nav-links">
+          <li><a href="#catalog" id="nav-catalog" class="nav-link">Collections</a></li>
+          <li>
+            <a href="/pay" id="gateway-status-pill" class="gateway-pill disconnected"
+              title="Click to configure Gateway credentials">
+              <span class="status-dot"></span>
+              <span id="gateway-status-text">Checking Gateway...</span>
+            </a>
+          </li>
+          <li>
+            <a href="/api/dashboard-redirect" target="_blank" class="nav-link"
+              style="color: #64748b; font-size: 0.88rem;">
+              Gateway Dashboard ↗
+            </a>
+          </li>
+          <li>
+            <button id="nav-cart" aria-label="Open Cart" class="cart-toggle-btn">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+              <span>Bag</span>
+              <span class="cart-badge" id="cart-count">0</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content">
+
+    <!-- Product Catalog View -->
+    <section id="view-catalog" class="view-section active">
+
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-content">
+          <div class="hero-tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+              </polygon>
+            </svg>
+            Autumn / Winter 2026
+          </div>
+          <h2>Engineered for Performance. <span>Secured by Gateway.</span></h2>
+          <p>Explore luxury handcrafted performance footwear. Fully integrated with Agent Commerce Gateway for instant
+            Razorpay test checkouts.</p>
+
+          <div class="hero-badges">
+            <span class="hero-badge-pill">🛡️ 5-Stage Policy Pipeline</span>
+            <span class="hero-badge-pill">⚡ Instant Razorpay Orders</span>
+            <span class="hero-badge-pill">🤖 AI Agentic Commerce Protocol</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="catalog-header">
+        <div>
+          <h2 class="section-title">Trending Footwear</h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">Handpicked styles with dynamic
+            stock & size selection</p>
+        </div>
+        <div class="controls">
+          <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <label for="search-input" class="visually-hidden">Search products</label>
+            <input type="search" id="search-input" placeholder="Search shoes by name, category..."
+              aria-label="Search shoes">
+          </div>
+
+          <div class="filter-box">
+            <label for="category-filter" class="visually-hidden">Filter by category</label>
+            <select id="category-filter" aria-label="Filter by category">
+              <option value="">All Collections</option>
+              <option value="Running">Running</option>
+              <option value="Casual">Casual</option>
+              <option value="Outdoor">Outdoor</option>
+              <option value="Basketball">Basketball</option>
+              <option value="Formal">Formal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="product-grid" class="product-grid" role="list" aria-label="Product list">
+        <!-- Products injected via JS -->
+      </div>
+    </section>
+
+    <!-- Product Detail View -->
+    <section id="view-product" class="view-section hidden" aria-labelledby="detail-title">
+      <button id="back-to-catalog" class="back-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Collections
+      </button>
+
+      <div id="product-detail-container" class="product-detail">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Cart Sidebar Drawer -->
+  <aside id="cart-sidebar" class="cart-sidebar hidden" aria-labelledby="cart-title" aria-hidden="true">
+    <div class="cart-header">
+      <h2 id="cart-title">Your Bag</h2>
+      <button id="close-cart" aria-label="Close cart" class="close-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div id="cart-items" class="cart-items">
+      <!-- Cart items injected here -->
+    </div>
+
+    <div class="cart-footer">
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span id="cart-subtotal-amount">₹0</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Estimated Taxes / Gateway Fees</span>
+        <span style="color: #10b981; font-weight: 600;">₹0 (Test Mode)</span>
+      </div>
+      <div class="cart-total">
+        <span>Total Due</span>
+        <strong id="cart-total-amount">₹0</strong>
+      </div>
+
+      <button id="btn-checkout" class="btn-checkout-primary">
+        <span>Proceed to Checkout</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+
+      <div class="checkout-badge-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        Secured by Agent Commerce Gateway & Razorpay
+      </div>
+
+      <div id="checkout-message" style="display: none;" aria-live="polite"></div>
+    </div>
+  </aside>
+
+  <div id="cart-overlay" class="cart-overlay hidden"></div>
+
+  <!-- Gateway Pipeline Authority & Execution Modal -->
+  <div id="pipeline-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="pipeline-dialog" role="dialog" aria-modal="true" aria-labelledby="pipeline-title">
+      <div class="pipeline-header">
+        <div class="pipeline-icon-badge">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;">
+          <h3 id="pipeline-title" style="margin: 0;">Agent Commerce Gateway</h3>
+          <span id="pipeline-protocol-pill" class="protocol-badge">ACP 2026</span>
+        </div>
+        <p id="pipeline-subtitle">Live Security Pipeline & Policy Enforcement</p>
+      </div>
+
+      <!-- Real Pipeline Stages Container -->
+      <ul class="pipeline-steps" id="pipeline-steps-list">
+        <!-- Injected dynamically from real Gateway response -->
+      </ul>
+
+      <!-- Collapsible Canonical Request Inspector -->
+      <div class="canonical-container">
+        <button id="btn-toggle-canonical" class="btn-canonical-toggle" type="button">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>Inspect Canonical Request</span>
+          </span>
+          <span id="canonical-chevron">▼</span>
+        </button>
+        <div id="canonical-details" class="canonical-details hidden">
+          <pre><code id="canonical-json-content">Waiting for Gateway normalization...</code></pre>
+        </div>
+      </div>
+
+      <!-- Gateway Decision Box -->
+      <div id="pipeline-decision-box" class="pipeline-decision-box hidden">
+        <div id="pipeline-decision-status" class="decision-status">Evaluating...</div>
+        <div id="pipeline-decision-reason" class="decision-reason"></div>
+        <div id="pipeline-order-info" class="order-info hidden"></div>
+      </div>
+
+      <div id="pipeline-actions" class="pipeline-actions hidden" style="margin-top: 1.25rem;">
+        <button id="btn-dismiss-pipeline" class="btn-continue-shopping" style="width: 100%;">Close / Return to Bag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verified Payment Celebration Receipt Modal -->
+  <div id="receipt-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="receipt-dialog" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
+      <div class="receipt-success-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h2 id="receipt-title">Payment Captured & Verified!</h2>
+      <p class="receipt-subtitle">Your transaction has been processed and permanently recorded in the Gateway Audit Ledger.</p>
+
+      <div class="receipt-details-box">
+        <div class="receipt-row">
+          <span class="label">Razorpay Payment ID</span>
+          <span class="value"><code id="receipt-payment-id">pay_...</code></span>
+        </div>
+        <div class="receipt-row">
+          <span class="label">Razorpay Order ID</span>
+          <span class="value"><code id="receipt-order-id">order_...</code></span>
+        </div>
+        <div class="receipt-row">
+          <span class="label">Amount Paid</span>
+          <span class="value" id="receipt-amount" style="color: #15803d;">₹0</span>
+        </div>
+        <div class="receipt-row">
+          <span class="label">Gateway Decision</span>
+          <span class="value"><span style="background: #dcfce7; color: #15803d; font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;">ALLOW</span></span>
+        </div>
+        <div class="audit-status-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Audit Event Committed to Gateway SQLite Ledger</span>
+        </div>
+      </div>
+
+      <div class="receipt-actions">
+        <a href="/api/dashboard-redirect" target="_blank" class="btn-audit-dashboard">
+          <span>View Gateway Audit Log</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </a>
+        <button id="btn-close-receipt" class="btn-continue-shopping">Continue Shopping</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

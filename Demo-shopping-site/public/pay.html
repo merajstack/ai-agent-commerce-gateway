@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Connection - Agent Commerce Gateway</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(135deg, #0b0f19 0%, #1e293b 100%);
+      color: #0f172a;
+      margin: 0;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .setup-wrapper {
+      width: 100%;
+      max-width: 520px;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: 2.75rem 2.5rem;
+      border-radius: var(--radius-xl);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .header .setup-icon-wrap {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 1rem;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+    .header h1 {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+      margin: 0 0 6px 0;
+    }
+    .header p {
+      font-size: 0.92rem;
+      color: #64748b;
+      margin: 0;
+    }
+    .steps-box {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.75rem;
+      font-size: 0.88rem;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .steps-box strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .steps-box a {
+      color: #2563eb;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .steps-box a:hover {
+      text-decoration: underline;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #475569;
+      margin-bottom: 0.5rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: var(--radius-md);
+      box-sizing: border-box;
+      transition: var(--transition-fast);
+      background: #ffffff;
+      color: #0f172a;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    .btn {
+      width: 100%;
+      padding: 0.95rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      background: #0f172a;
+      border: none;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn:hover {
+      background: #1e293b;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .error-msg {
+      color: #b91c1c;
+      font-size: 0.88rem;
+      margin-top: 1rem;
+      padding: 0.85rem;
+      background-color: #fef2f2;
+      border-radius: var(--radius-md);
+      border: 1px solid #fecaca;
+      display: none;
+    }
+    .status-card {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius-lg);
+      display: none;
+    }
+    .status-card.active {
+      display: block;
+    }
+    .status-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .status-icon {
+      font-size: 1.25rem;
+      margin-right: 0.6rem;
+    }
+    .status-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #166534;
+    }
+    .status-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.25rem 0;
+      font-size: 0.88rem;
+      color: #15803d;
+    }
+    .status-list li {
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .status-list li span {
+      font-weight: 700;
+    }
+    .nav-links-footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.88rem;
+    }
+    .nav-links-footer a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-weight: 600;
+      transition: var(--transition-fast);
+    }
+    .nav-links-footer a:hover {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="setup-wrapper">
+  <div class="container">
+    <div class="header">
+      <div class="setup-icon-wrap">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        </svg>
+      </div>
+      <h1>Merchant Connection</h1>
+      <p>Connect your storefront to the Agent Commerce Gateway</p>
+    </div>
+
+    <div class="steps-box">
+      <strong>Quick Setup Guide:</strong>
+      <ol style="padding-left: 18px; margin: 6px 0 0 0;">
+        <li>Open <a href="/api/dashboard-redirect" target="_blank">Gateway Dashboard</a>.</li>
+        <li>Save your Razorpay Test Key ID & Secret and policy.</li>
+        <li>Click <strong>Generate API Key</strong> and paste it below.</li>
+      </ol>
+    </div>
+
+    <div id="connectionForm">
+      <div class="form-group">
+        <label for="apiKey">Merchant API Key</label>
+        <input type="password" id="apiKey" placeholder="sk_test_..." required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="gatewayUrl">Gateway URL</label>
+        <input type="url" id="gatewayUrl" placeholder="https://gateway-service.vercel.app" required>
+      </div>
+      <button class="btn" id="connectBtn" onclick="connect()">Connect to Gateway</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <div class="status-card" id="statusCard">
+      <div class="status-header">
+        <span class="status-icon">✅</span>
+        <span class="status-title">Connected to Gateway</span>
+      </div>
+      <ul class="status-list">
+        <li>Merchant ID: <span id="merchantIdText">...</span></li>
+        <li>Gateway Status: <span id="gatewayUrlText">Active</span></li>
+        <li>Protocol: <span>ACP (Agentic Commerce) &amp; x402 v2</span></li>
+        <li>Security Pipeline: <span>Active (8-Stage Deterministic)</span></li>
+      </ul>
+      <a href="/" class="btn" style="text-align: center; text-decoration: none; display: block; box-sizing: border-box; background-color: #2563eb; margin-bottom: 10px;">Return to Storefront &amp; Checkout</a>
+      <button class="btn" style="background-color: #ef4444;" onclick="disconnect()">Disconnect</button>
+    </div>
+  </div>
+
+  <div class="nav-links-footer">
+    <a href="/">← Back to Storefront</a> &nbsp;•&nbsp; <a href="/api/dashboard-redirect" target="_blank">Gateway Dashboard ↗</a>
+  </div>
+</div>
+
+<script>
+  async function checkStatus() {
+    try {
+      const res = await fetch('/api/connection-status');
+      const data = await res.json();
+      
+      if (data.connected) {
+        document.getElementById('connectionForm').style.display = 'none';
+        document.getElementById('statusCard').classList.add('active');
+        document.getElementById('merchantIdText').textContent = data.merchantId || 'merchant-demo-001';
+        document.getElementById('gatewayUrlText').textContent = data.gatewayUrl ? 'Connected' : 'Active';
+      } else {
+        document.getElementById('connectionForm').style.display = 'block';
+        document.getElementById('statusCard').classList.remove('active');
+        if (data.gatewayUrl) {
+          document.getElementById('gatewayUrl').value = data.gatewayUrl;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check status', err);
+    }
+  }
+
+  async function connect() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const gatewayUrl = document.getElementById('gatewayUrl').value.trim();
+    const btn = document.getElementById('connectBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    if (!apiKey || !gatewayUrl) {
+      errorMsg.textContent = 'Please fill in all fields.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Verifying with Gateway...';
+    errorMsg.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey, gatewayUrl })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Connection failed');
+      }
+
+      await checkStatus();
+      
+    } catch (err) {
+      errorMsg.textContent = err.message;
+      errorMsg.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Connect to Gateway';
+    }
+  }
+
+  async function disconnect() {
+    try {
+      await fetch('/api/disconnect', { method: 'POST' });
+      document.getElementById('apiKey').value = '';
+      await checkStatus();
+    } catch (err) {
+      console.error('Failed to disconnect', err);
+    }
+  }
+
+  // Initial check
+  checkStatus();
+</script>
+
+</body>
+</html>
