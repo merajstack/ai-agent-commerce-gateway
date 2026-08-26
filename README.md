@@ -29,6 +29,7 @@ This repository is not a proof of concept wired together to demo well. It is a w
 | Component | Description | Live Vercel Endpoint |
 | :--- | :--- | :--- |
 | **Footwear Storefront** | Apex Footwear Live Demo Merchant Store | [ai-agent-commerce-shoes.vercel.app](https://ai-agent-commerce-shoes.vercel.app/) |
+| **AI Chat** |AI chat interface which make protocol-formatted requests | [ai-agent-commerce-gateway.vercel.app](https://ai-agent-commerce-gateway.vercel.app/) |
 | **Agent Commerce Gateway** | Protocol-Agnostic Gateway & Audit Dashboard | [ai-agent-commerce-gateway-cjpp.vercel.app](https://ai-agent-commerce-gateway-cjpp.vercel.app/api/dashboard/) |
 
 <br>
