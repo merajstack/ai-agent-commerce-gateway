@@ -87,12 +87,10 @@ The gateway is built as a layered pipeline. Every layer has exactly one responsi
 
 **Design principle:** protocol diversity is a parsing problem, not an architecture problem. Everything downstream of the adapter layer — authorization, replay protection, policy, settlement — operates on one shape of data, regardless of whether the request arrived as ACP or x402. Adding a new protocol means writing a new adapter, not touching the security or payment core.
 
-## Workflow Architecture
-<p align="center">
-  <img src="./public/Workflow.png" alt="AI Agent Commerce Gateway Workflow" width="92%">
-</p>
-
-<br>
+## Explanation Video
+<a href="https://drive.google.com/file/d/1cIFik2QzjiFFQusGe7e8p_4wFEFvheid/view?usp=sharing">
+  <img src="./public/explanation-video.png" alt="Explanation Video" />
+</a>
 
 ## Why a Canonical Model
 
