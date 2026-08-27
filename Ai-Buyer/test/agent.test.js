@@ -7,6 +7,7 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
   let addedCartItems = [];
 
   beforeEach(() => {
+    gemini.resetState();
     checkoutCallCount = 0;
     verifyPaymentCallCount = 0;
     addedCartItems = [];
@@ -180,13 +181,11 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
   });
 
   test('2. ACP Confirmation → Gateway called once, ACP generated with quantity 3 & returns Razorpay key and order', async () => {
-    const history = [
-      { role: 'user', content: 'Get 3 AeroGlide Runner, tell me the total.' },
-      { role: 'assistant', content: 'The AeroGlide Runner is ₹8,500. For 3 pairs, the total is ₹25,500. Would you like me to proceed with the purchase?' }
-    ];
+    const msg1 = 'Get 3 AeroGlide Runner, tell me the total.';
+    await gemini.processMessage(msg1, [], 'acp');
 
     const message = 'Okay, buy them in size 9.';
-    const result = await gemini.processMessage(message, history, 'acp');
+    const result = await gemini.processMessage(message, [], 'acp');
 
     expect(checkoutCallCount).toBe(1);
     expect(result.gatewayResponse).toBeDefined();
@@ -207,7 +206,7 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
       { id: 'prod_shoe_008', name: 'Aqua Walker', price: 4200, quantity: 1, category: 'Outdoor', size: '9' }
     ];
 
-    const message = 'Buy Aqua Walker with x402';
+    const message = 'Buy Aqua Walker size 9 with x402';
     const result = await gemini.processMessage(message, [], 'x402');
 
     expect(result.rawProtocolRequest).toBeDefined();
@@ -227,13 +226,11 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
   });
 
   test('4. Product & quantity preserved across turns without silent substitution', async () => {
-    const history = [
-      { role: 'user', content: 'I need 3 AeroGlide Runner, tell me the price before buying' },
-      { role: 'assistant', content: 'The AeroGlide Runner is priced at ₹8,500 per pair. For 3 pairs, the total is ₹25,500.' }
-    ];
+    const msg1 = 'I need 3 AeroGlide Runner, tell me the price before buying';
+    await gemini.processMessage(msg1, [], 'acp');
 
     const message = 'Okay, buy them in size 9';
-    const result = await gemini.processMessage(message, history, 'acp');
+    const result = await gemini.processMessage(message, [], 'acp');
 
     expect(result.message).toContain('AeroGlide Runner');
     expect(result.message).not.toContain('Leather Oxford Elite');
@@ -316,6 +313,47 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
     expect(result.message).toContain('Express Shipping');
     expect(result.rawProtocolRequest).toBeNull();
     expect(result.gatewayResponse).toBeNull();
+    expect(checkoutCallCount).toBe(0);
+  });
+
+  test('12. Checkout fails gracefully when cart is empty without purchase intent', async () => {
+    const message = 'checkout now';
+    const result = await gemini.processMessage(message, [], 'acp');
+
+    expect(result.message).toContain('Which product');
+    expect(result.rawProtocolRequest).toBeNull();
+    expect(checkoutCallCount).toBe(0);
+  });
+
+  test('13. Multi-turn context persists selected product and asks for size if missing', async () => {
+    const message1 = 'Buy the AeroGlide Runner';
+    const result1 = await gemini.processMessage(message1, [], 'acp');
+
+    // Should ask for size
+    expect(result1.message).toContain('What size');
+    expect(result1.rawProtocolRequest).toBeNull();
+
+    const history = [
+      { role: 'user', content: message1 },
+      { role: 'assistant', content: result1.message }
+    ];
+    
+    // Provide size in next turn
+    const message2 = 'Size 10 please';
+    const result2 = await gemini.processMessage(message2, history, 'acp');
+
+    // Now it should checkout with size 10
+    expect(checkoutCallCount).toBe(1);
+    expect(result2.rawProtocolRequest.items[0].name).toBe('AeroGlide Runner');
+    expect(addedCartItems[0].size).toBe('10');
+  });
+
+  test('14. Recommendation request does not trigger checkout', async () => {
+    const message = 'Can you recommend some good outdoor shoes?';
+    const result = await gemini.processMessage(message, [], 'acp');
+
+    expect(result.message).toContain('Aqua Walker');
+    expect(result.rawProtocolRequest).toBeNull();
     expect(checkoutCallCount).toBe(0);
   });
 });

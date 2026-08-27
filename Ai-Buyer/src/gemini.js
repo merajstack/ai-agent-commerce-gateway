@@ -14,7 +14,18 @@ const { generateProtocolPayload } = require('./protocols');
  * - Deterministic fallback planner with complete store dataset & smart conversational Q&A
  */
 class AIAgentEngine {
+  resetState() {
+    this.state = {
+      selected_product: null,
+      selected_quantity: 1,
+      selected_size: null,
+      cart_confirmed: false,
+      pending_checkout: false
+    };
+  }
+
   constructor() {
+    this.resetState();
     this.models = [
       config.GEMINI_MODEL || 'gemini-3.5-flash',
       'gemini-3.5-flash',
@@ -333,9 +344,9 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
 
     // Helper: Extract size
     const extractSize = (str) => {
-      if (!str) return '9';
+      if (!str) return null;
       const match = str.match(/size\s*[:\s]?\s*(\d+)/i);
-      return match ? match[1] : '9';
+      return match ? match[1] : null;
     };
 
     // ── 0. GREETINGS & SIMPLE TALK ──────────────────────────────────────────
@@ -520,52 +531,32 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
       };
     }
 
-    // ── 1. RECONSTRUCT STATE FROM HISTORY AND CART ───────────────────────────
-    let stateProduct = null;
-    let stateQuantity = 1;
-    let stateSize = '9';
-
+    // ── 1. MANAGE STATE ──────────────────────────────────────────────────────
     const currentCart = await toolHandlers.getCart();
-    if (currentCart.items && currentCart.items.length > 0) {
-      const lastCartItem = currentCart.items[currentCart.items.length - 1];
-      const matchInCatalog = allProducts.find(p => p.id === lastCartItem.id);
-      if (matchInCatalog) {
-        stateProduct = matchInCatalog;
-        stateQuantity = lastCartItem.quantity || 1;
-        stateSize = lastCartItem.size || '9';
-      }
-    }
-
-    if (history && history.length > 0) {
-      for (let i = history.length - 1; i >= 0; i--) {
-        const msgText = history[i].content;
-        const foundProd = findProductInText(msgText);
-        if (foundProd) {
-          stateProduct = foundProd;
-        }
-        const q = extractQuantity(msgText);
-        if (q > 1) {
-          stateQuantity = q;
-        }
-        const s = extractSize(msgText);
-        if (s && s !== '9') {
-          stateSize = s;
-        }
-        if (stateProduct && stateQuantity > 1) break;
-      }
-    }
 
     const currentProductMatch = findProductInText(text);
     if (currentProductMatch) {
-      stateProduct = currentProductMatch;
+      if (!this.state.selected_product || this.state.selected_product.id !== currentProductMatch.id) {
+        this.state.selected_size = null; // Reset size for new product
+      }
+      this.state.selected_product = currentProductMatch;
     }
+    
     const hasExplicitQuantityInCurrentMsg = /(?:\b\d+\s*(?:pairs?|items?|shoes?|x\b|pcs?)|(?:get|need|want|buy|order|for|take)\s+\d+\b)/i.test(text);
     if (hasExplicitQuantityInCurrentMsg) {
-      stateQuantity = extractQuantity(text);
+      this.state.selected_quantity = extractQuantity(text);
     }
+    
     if (text.includes('size')) {
-      stateSize = extractSize(text);
+      const s = extractSize(text);
+      if (s) {
+        this.state.selected_size = s;
+      }
     }
+
+    let stateProduct = this.state.selected_product;
+    let stateQuantity = this.state.selected_quantity;
+    let stateSize = this.state.selected_size;
 
     // ── 2. CLASSIFY SHOPPING INTENT ──────────────────────────────────────────
     const pricePatterns = [
@@ -596,7 +587,12 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
       text.includes('buy one')
     ) && !isPriceOnlyIntent;
     const isConfirmPhrase = confirmPhrases.some(p => text.includes(p));
-    const isTransactionIntent = !isPriceOnlyIntent && (isConfirmPhrase || isDirectBuy);
+    let isTransactionIntent = !isPriceOnlyIntent && (isConfirmPhrase || isDirectBuy);
+    
+    if (this.state.pending_checkout && text.includes('size')) {
+      isTransactionIntent = true;
+      this.state.pending_checkout = false;
+    }
 
     const isCartViewIntent = text.includes('cart') && (text.includes('show') || text.includes('view') || text.includes('what'));
     const isChooseForMeIntent = /\b(choose\s*(?:one|1)?|pick\s*(?:one|1)?|select\s*(?:one|1)?|you\s+choose|you\s+pick|which\s+one\s+should\s+i|your\s+choice|decide\s+for\s+me)\b/i.test(text) && !isTransactionIntent;
@@ -654,6 +650,7 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
     // --- CASE C: "Choose 1 for me" Delegation ---
     if (isChooseForMeIntent) {
       const topChoice = stateProduct || allProducts.find(p => p.name.includes('AeroGlide')) || allProducts[0];
+      this.state.selected_product = topChoice;
       stateProduct = topChoice;
 
       activityLogs.push({
@@ -663,7 +660,7 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
         result: { selected: topChoice.name, price: topChoice.price }
       });
 
-      responseText = `If I had to pick just one, I definitely recommend the **${topChoice.name}** (₹${topChoice.price.toLocaleString('en-IN')}, Size ${stateSize})! 🏆\n\n` +
+      responseText = `If I had to pick just one, I definitely recommend the **${topChoice.name}** (₹${topChoice.price.toLocaleString('en-IN')}${stateSize ? `, Size ${stateSize}` : ''})! 🏆\n\n` +
         `It offers the best overall balance of comfort, build quality, and versatile performance.\n\n` +
         `Shall we proceed with this pair? Just say **"Buy the ${topChoice.name}"** or **"Okay, buy them"** to confirm!`;
 
@@ -678,7 +675,16 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
 
     // --- CASE D: Informational / Price Quote Only ---
     if (isPriceOnlyIntent) {
-      const targetProduct = stateProduct || allProducts[0];
+      const targetProduct = stateProduct;
+      if (!targetProduct) {
+        return {
+          message: "Could you clarify which product's price you'd like to check?",
+          activityLogs,
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+      }
       const totalPrice = targetProduct.price * stateQuantity;
 
       activityLogs.push({
@@ -706,7 +712,25 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
 
     // --- CASE E: Cart Operation Only ---
     if (isCartOnlyIntent) {
-      const targetProduct = stateProduct || allProducts[0];
+      const targetProduct = stateProduct;
+      if (!targetProduct) {
+        return {
+          message: "Which product would you like to add to your cart?",
+          activityLogs,
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+      }
+      if (!stateSize) {
+        return {
+          message: `What size would you like for the **${targetProduct.name}**?`,
+          activityLogs,
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+      }
       activityLogs.push({
         tool: 'add_to_cart',
         status: 'running',
@@ -747,7 +771,28 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
         }
       }
 
-      const targetProduct = stateProduct || allProducts[0];
+      const targetProduct = stateProduct;
+
+      if (!targetProduct) {
+        return {
+          message: "Which product would you like to buy?",
+          activityLogs,
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+      }
+
+      if (!stateSize) {
+        this.state.pending_checkout = true;
+        return {
+          message: `What size would you like for the **${targetProduct.name}**?`,
+          activityLogs,
+          rawProtocolRequest: null,
+          gatewayResponse: null,
+          protocolMetadata: null
+        };
+      }
 
       // 1. Add to cart
       activityLogs.push({
