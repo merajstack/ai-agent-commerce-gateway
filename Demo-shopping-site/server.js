@@ -317,7 +317,11 @@ app.post('/api/checkout-intent', async (req, res) => {
     return res.status(400).json({ error: 'Cart is empty' });
   }
 
-  const merchantApiKey = runtimeConfig.apiKey || process.env.MERCHANT_API_KEY;
+  let merchantApiKey = runtimeConfig.apiKey || process.env.MERCHANT_API_KEY || 'sk_test_f22ff116facae2ec5d6a6266cb366dae0e93d85674311019';
+  if (merchantApiKey) {
+    merchantApiKey = merchantApiKey.replace(/['"]/g, '').trim(); // Remove any accidental quotes from Vercel env
+  }
+  
   if (!merchantApiKey) {
     return res.status(400).json({ 
       error: 'Storefront is not connected to Agent Commerce Gateway. Please visit /pay to connect your API key.' 
@@ -412,7 +416,10 @@ app.post('/api/verify-payment', async (req, res) => {
     return res.status(400).json({ error: 'Missing required payment callback parameters' });
   }
 
-  const merchantApiKey = runtimeConfig.apiKey || process.env.MERCHANT_API_KEY;
+  let merchantApiKey = runtimeConfig.apiKey || process.env.MERCHANT_API_KEY || 'sk_test_f22ff116facae2ec5d6a6266cb366dae0e93d85674311019';
+  if (merchantApiKey) {
+    merchantApiKey = merchantApiKey.replace(/['"]/g, '').trim();
+  }
   if (!merchantApiKey) {
     return res.status(400).json({ error: 'Storefront is not connected to Agent Commerce Gateway' });
   }
