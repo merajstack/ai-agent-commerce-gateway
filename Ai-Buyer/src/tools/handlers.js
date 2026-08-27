@@ -284,7 +284,7 @@ class ToolHandlers {
         protocol_version: protocolInfo.protocolVersion,
         raw_protocol_payload: protocolInfo.payload,
         gateway_data: responseJson.data || responseJson,
-        error: resOk ? null : (responseJson.error || responseJson.details || 'Checkout execution failed')
+        error: resOk ? null : (responseJson.details || responseJson.error || 'Checkout execution failed')
       };
     } catch (err) {
       return {
