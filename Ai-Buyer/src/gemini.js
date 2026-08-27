@@ -768,6 +768,7 @@ You speak like a knowledgeable footwear stylist, athlete advisor, and helpful ev
         const withinBudget = allProducts.filter(p => p.price <= budget).sort((a, b) => b.price - a.price);
         if (withinBudget.length > 0) {
           stateProduct = withinBudget[0];
+          this.state.selected_product = stateProduct;
         }
       }
 

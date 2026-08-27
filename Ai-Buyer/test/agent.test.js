@@ -356,4 +356,40 @@ describe('AI Buyer Multi-Turn Conversation, ACP Execution, x402 v2 Flow & Paymen
     expect(result.rawProtocolRequest).toBeNull();
     expect(checkoutCallCount).toBe(0);
   });
+
+  test('15. "Find shoes under ₹5,000 and buy the best one" -> selects Aqua Walker and asks for size, then checks out on size provided', async () => {
+    const msg1 = 'Find shoes under ₹5,000 and buy the best one';
+    const res1 = await gemini.processMessage(msg1, [], 'acp');
+
+    expect(res1.message).toContain('What size');
+    expect(res1.message).toContain('Aqua Walker');
+    expect(res1.rawProtocolRequest).toBeNull();
+
+    const history = [
+      { role: 'user', content: msg1 },
+      { role: 'assistant', content: res1.message }
+    ];
+
+    const msg2 = 'Size 9';
+    const res2 = await gemini.processMessage(msg2, history, 'acp');
+
+    expect(checkoutCallCount).toBe(1);
+    expect(res2.rawProtocolRequest).toBeDefined();
+    expect(res2.rawProtocolRequest.items[0].name).toBe('Aqua Walker');
+    expect(res2.gatewayResponse).toBeDefined();
+    expect(res2.gatewayResponse.gateway_decision).toBe('ALLOW');
+  });
+
+  test('16. "Leather Oxford Elite buy them size 9" in X402 -> immediately checks out with x402 and reaches ALLOW', async () => {
+    const message = 'Leather Oxford Elite buy them size 9';
+    const result = await gemini.processMessage(message, [], 'x402');
+
+    expect(checkoutCallCount).toBe(1);
+    expect(result.rawProtocolRequest).toBeDefined();
+    expect(result.rawProtocolRequest.x402Version).toBe(2);
+    expect(result.gatewayResponse).toBeDefined();
+    expect(result.gatewayResponse.gateway_decision).toBe('ALLOW');
+    expect(result.message).toContain('x402 v2 Order Authorized & Prepared!');
+    expect(result.message).toContain('Leather Oxford Elite');
+  });
 });
