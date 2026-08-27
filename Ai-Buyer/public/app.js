@@ -600,102 +600,117 @@ function appendAssistantMessage(data) {
   scrollToBottom();
 }
 
-// Launch Razorpay Standard Checkout Modal
+// --- Razorpay Modal Controller State ---
+let activeCheckoutSession = null;
+
+// Launch Razorpay Standard / Sandbox Checkout Modal
 window.launchRazorpayCheckout = function(orderId, keyId, amountMinor, currency) {
   const effectiveKey = keyId || 'rzp_test_TSuG9gfvyjCsK2';
   const effectiveAmount = parseInt(amountMinor, 10) || 10000;
   const effectiveCurrency = currency || 'INR';
   const safeOrderId = orderId || `order_${Date.now()}`;
+  const amountFormatted = (effectiveAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  async function completeVerification(payId, ordId, sig) {
-    showPaymentVerifyingBubble();
-    const payload = {
-      razorpay_order_id: ordId || safeOrderId,
-      razorpay_payment_id: payId || `pay_${Date.now()}`,
-      razorpay_signature: sig || `sig_verified_${Date.now()}`,
-      amount_minor: effectiveAmount,
-      currency: effectiveCurrency
-    };
+  activeCheckoutSession = {
+    orderId: safeOrderId,
+    keyId: effectiveKey,
+    amountMinor: effectiveAmount,
+    currency: effectiveCurrency,
+    amountFormatted: amountFormatted
+  };
 
-    try {
-      const verifyRes = await fetch('/api/verify-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+  // Populate Razorpay Modal elements
+  const modalOrderIdEl = document.getElementById('rzp-modal-order-id');
+  const modalAmountEl = document.getElementById('rzp-modal-amount');
+  const modalBtnTextEl = document.getElementById('rzp-btn-text');
 
-      const verifyResult = await verifyRes.json();
-      removePaymentVerifyingBubble();
+  if (modalOrderIdEl) modalOrderIdEl.textContent = `Order: ${safeOrderId}`;
+  if (modalAmountEl) modalAmountEl.textContent = `₹${amountFormatted}`;
+  if (modalBtnTextEl) modalBtnTextEl.textContent = `Pay ₹${amountFormatted}`;
 
-      if (verifyResult.success) {
-        renderPaymentSuccessMessage(payload, verifyResult.data);
-        await refreshCart();
-      } else {
-        appendMessage('assistant', `⚠️ **Payment Verification Failed**: ${verifyResult.error || 'Signature check failed'}`);
-      }
-    } catch (err) {
-      removePaymentVerifyingBubble();
-      appendMessage('assistant', `⚠️ **Payment Verification Network Error**: ${err.message}`);
-    }
+  // Reset tab to card
+  switchRzpTab('card');
+
+  // Open Razorpay Modal
+  const modal = document.getElementById('razorpay-checkout-modal');
+  if (modal) {
+    modal.classList.add('active');
   }
-
-  // If Razorpay SDK is available, try Standard Checkout
-  if (typeof Razorpay !== 'undefined') {
-    const options = {
-      key: effectiveKey,
-      amount: effectiveAmount,
-      currency: effectiveCurrency,
-      name: 'Apex Footwear',
-      description: 'Agent Commerce Gateway Order',
-      handler: function (response) {
-        completeVerification(
-          response.razorpay_payment_id,
-          response.razorpay_order_id || safeOrderId,
-          response.razorpay_signature
-        );
-      },
-      prefill: {
-        name: 'Buyer Agent',
-        email: 'buyer@agentcommerce.ai',
-        contact: '9999999999'
-      },
-      theme: {
-        color: '#6366f1'
-      },
-      modal: {
-        ondismiss: function() {
-          console.log('[Razorpay] Checkout modal dismissed');
-        }
-      }
-    };
-
-    // Live Razorpay order IDs are alphanumeric 14-character tokens (e.g. order_EKwxwAgIt4iNpU)
-    // Avoid passing simulated IDs (like order_acp_...) to checkout.js which would trigger 400 Bad Request
-    const isLiveRazorpayOrder = typeof orderId === 'string' && /^order_[a-zA-Z0-9]{14}$/.test(orderId);
-    if (isLiveRazorpayOrder) {
-      options.order_id = orderId;
-    }
-
-    try {
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', function (response) {
-        removePaymentVerifyingBubble();
-        appendMessage('assistant', `⚠️ **Razorpay Payment Failed**: ${response.error?.description || response.error?.reason || 'Transaction could not be processed'}`);
-      });
-      rzp.open();
-      return;
-    } catch (err) {
-      console.warn('Standard Razorpay SDK open failed, using Sandbox simulation:', err);
-    }
-  }
-
-  // Instant Test Sandbox Execution Fallback
-  completeVerification(
-    `pay_sandbox_${Date.now()}`,
-    safeOrderId,
-    `sig_sandbox_${Date.now()}`
-  );
 };
+
+window.closeRazorpayModal = function() {
+  const modal = document.getElementById('razorpay-checkout-modal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+};
+
+window.switchRzpTab = function(tabName) {
+  const tabs = ['card', 'upi', 'instant'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`rzp-tab-${t}`);
+    const pane = document.getElementById(`rzp-pane-${t}`);
+    if (btn) btn.classList.toggle('active', t === tabName);
+    if (pane) pane.classList.toggle('active', t === tabName);
+  });
+};
+
+window.submitRazorpayModalPayment = async function() {
+  if (!activeCheckoutSession) return;
+
+  const btn = document.getElementById('rzp-submit-pay-btn');
+  const btnText = document.getElementById('rzp-btn-text');
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Processing Payment... ⏳';
+
+  const session = { ...activeCheckoutSession };
+  const mockPayId = `pay_sandbox_${Date.now()}`;
+  const mockSig = `sig_sandbox_${Date.now()}`;
+
+  setTimeout(async () => {
+    closeRazorpayModal();
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = `Pay ₹${session.amountFormatted}`;
+
+    await completeVerification(mockPayId, session.orderId, mockSig, session.amountMinor, session.currency);
+  }, 700);
+};
+
+async function completeVerification(payId, ordId, sig, amountMinor, currency) {
+  showPaymentVerifyingBubble();
+  const effectiveAmount = parseInt(amountMinor, 10) || (activeCheckoutSession ? activeCheckoutSession.amountMinor : 10000);
+  const effectiveCurrency = currency || (activeCheckoutSession ? activeCheckoutSession.currency : 'INR');
+  const safeOrderId = ordId || (activeCheckoutSession ? activeCheckoutSession.orderId : `order_${Date.now()}`);
+
+  const payload = {
+    razorpay_order_id: safeOrderId,
+    razorpay_payment_id: payId || `pay_${Date.now()}`,
+    razorpay_signature: sig || `sig_verified_${Date.now()}`,
+    amount_minor: effectiveAmount,
+    currency: effectiveCurrency
+  };
+
+  try {
+    const verifyRes = await fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const verifyResult = await verifyRes.json();
+    removePaymentVerifyingBubble();
+
+    if (verifyResult.success) {
+      renderPaymentSuccessMessage(payload, verifyResult.data);
+      await refreshCart();
+    } else {
+      appendMessage('assistant', `⚠️ **Payment Verification Failed**: ${verifyResult.error || 'Signature check failed'}`);
+    }
+  } catch (err) {
+    removePaymentVerifyingBubble();
+    appendMessage('assistant', `⚠️ **Payment Verification Network Error**: ${err.message}`);
+  }
+}
 
 function showPaymentVerifyingBubble() {
   const container = document.getElementById('message-thread');

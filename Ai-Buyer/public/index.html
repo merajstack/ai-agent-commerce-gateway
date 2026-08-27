@@ -509,6 +509,101 @@
     </div>
   </div>
 
+  <!-- RAZORPAY SANDBOX CHECKOUT MODAL -->
+  <div id="razorpay-checkout-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="rzp-modal-dialog" role="dialog" aria-modal="true">
+      <!-- Razorpay Header -->
+      <div class="rzp-modal-header">
+        <div class="rzp-brand-wrap">
+          <svg class="rzp-logo-svg" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg" height="22">
+            <path d="M12.5 0L0 24H7.5L16.2 7.2L12.5 0Z" fill="#3395FF"/>
+            <path d="M22.5 0L12.5 24H20L30 0H22.5Z" fill="#0C2340"/>
+            <text x="34" y="17" fill="#0C2340" font-family="'Outfit', sans-serif" font-size="16" font-weight="800">Razorpay</text>
+          </svg>
+          <span class="rzp-test-mode-badge">TEST MODE</span>
+        </div>
+        <button class="rzp-close-btn" onclick="closeRazorpayModal()" title="Cancel Payment">✕</button>
+      </div>
+
+      <!-- Merchant & Amount Bar -->
+      <div class="rzp-merchant-bar">
+        <div class="rzp-merchant-info">
+          <span class="rzp-merchant-name">Apex Footwear</span>
+          <span class="rzp-order-num" id="rzp-modal-order-id">Order: order_...</span>
+        </div>
+        <div class="rzp-amount-badge" id="rzp-modal-amount">₹8,500.00</div>
+      </div>
+
+      <!-- Protocol Security Tag -->
+      <div class="rzp-protocol-banner">
+        <span>🛡️ Authorized by Agent Commerce Gateway (ACP / x402)</span>
+      </div>
+
+      <!-- Payment Tabs -->
+      <div class="rzp-payment-tabs">
+        <button class="rzp-tab-btn active" onclick="switchRzpTab('card')" id="rzp-tab-card">💳 Card</button>
+        <button class="rzp-tab-btn" onclick="switchRzpTab('upi')" id="rzp-tab-upi">📱 UPI / QR</button>
+        <button class="rzp-tab-btn" onclick="switchRzpTab('instant')" id="rzp-tab-instant">⚡ 1-Click Pay</button>
+      </div>
+
+      <!-- Tab Content: Card -->
+      <div class="rzp-tab-pane active" id="rzp-pane-card">
+        <div class="rzp-field-group">
+          <label>Card Number</label>
+          <div class="rzp-input-icon-wrap">
+            <input type="text" id="rzp-card-num" value="4111 •••• •••• 1111" readonly>
+            <span class="rzp-card-type">VISA</span>
+          </div>
+        </div>
+        <div class="rzp-field-row">
+          <div class="rzp-field-group">
+            <label>Expiry</label>
+            <input type="text" id="rzp-card-exp" value="12 / 28" readonly>
+          </div>
+          <div class="rzp-field-group">
+            <label>CVV</label>
+            <input type="text" id="rzp-card-cvv" value="123" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: UPI -->
+      <div class="rzp-tab-pane" id="rzp-pane-upi">
+        <div class="rzp-field-group">
+          <label>Virtual Payment Address (VPA / UPI ID)</label>
+          <input type="text" id="rzp-upi-id" value="buyer@okhdfcbank">
+        </div>
+        <div class="rzp-upi-apps">
+          <span class="rzp-app-chip">Google Pay</span>
+          <span class="rzp-app-chip">PhonePe</span>
+          <span class="rzp-app-chip">Paytm</span>
+          <span class="rzp-app-chip">BHIM</span>
+        </div>
+      </div>
+
+      <!-- Tab Content: 1-Click Instant -->
+      <div class="rzp-tab-pane" id="rzp-pane-instant">
+        <div class="rzp-instant-box">
+          <div class="rzp-instant-icon">⚡</div>
+          <div class="rzp-instant-title">Instant Agentic Sandbox Settlement</div>
+          <p>Simulate an immediate successful cryptographic payment capture without typing credentials.</p>
+        </div>
+      </div>
+
+      <!-- Pay Button -->
+      <div class="rzp-action-section">
+        <button class="rzp-submit-btn" id="rzp-submit-pay-btn" onclick="submitRazorpayModalPayment()">
+          <span id="rzp-btn-text">Pay ₹8,500.00</span>
+          <span class="rzp-lock-icon">🔒</span>
+        </button>
+        <div class="rzp-footer-security">
+          <span class="rzp-shield-icon">🛡️</span>
+          <span>Secured by 256-bit Razorpay Sandbox Encryption &amp; Gateway Nonce Lock</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
