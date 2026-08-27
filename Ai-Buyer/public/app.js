@@ -602,84 +602,99 @@ function appendAssistantMessage(data) {
 
 // Launch Razorpay Standard Checkout Modal
 window.launchRazorpayCheckout = function(orderId, keyId, amountMinor, currency) {
-  if (typeof Razorpay === 'undefined') {
-    alert('Razorpay Checkout SDK is loading, please try again in a moment.');
-    return;
-  }
-
   const effectiveKey = keyId || 'rzp_test_TSuG9gfvyjCsK2';
   const effectiveAmount = parseInt(amountMinor, 10) || 10000;
   const effectiveCurrency = currency || 'INR';
+  const safeOrderId = orderId || `order_${Date.now()}`;
 
-  const options = {
-    key: effectiveKey,
-    amount: effectiveAmount,
-    currency: effectiveCurrency,
-    name: 'Apex Footwear',
-    description: 'AI Shopping Order (Agent Commerce Gateway)',
-    handler: async function (response) {
-      showPaymentVerifyingBubble();
-      
-      const payload = {
-        razorpay_order_id: response.razorpay_order_id || orderId || `order_${Date.now()}`,
-        razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
-        razorpay_signature: response.razorpay_signature || `sig_verified_${Date.now()}`,
-        amount_minor: effectiveAmount,
-        currency: effectiveCurrency
-      };
+  async function completeVerification(payId, ordId, sig) {
+    showPaymentVerifyingBubble();
+    const payload = {
+      razorpay_order_id: ordId || safeOrderId,
+      razorpay_payment_id: payId || `pay_${Date.now()}`,
+      razorpay_signature: sig || `sig_verified_${Date.now()}`,
+      amount_minor: effectiveAmount,
+      currency: effectiveCurrency
+    };
 
-      try {
-        const verifyRes = await fetch('/api/verify-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+    try {
+      const verifyRes = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        const verifyResult = await verifyRes.json();
-        removePaymentVerifyingBubble();
-
-        if (verifyResult.success) {
-          renderPaymentSuccessMessage(payload, verifyResult.data);
-          await refreshCart();
-        } else {
-          appendMessage('assistant', `⚠️ **Payment Verification Failed**: ${verifyResult.error || 'Signature check failed'}`);
-        }
-      } catch (err) {
-        removePaymentVerifyingBubble();
-        appendMessage('assistant', `⚠️ **Payment Verification Network Error**: ${err.message}`);
-      }
-    },
-    prefill: {
-      name: 'Buyer Agent',
-      email: 'buyer@agentcommerce.ai',
-      contact: '9999999999'
-    },
-    theme: {
-      color: '#6366f1'
-    },
-    modal: {
-      ondismiss: function() {
-        console.log('[Razorpay] Checkout modal dismissed');
-      }
-    }
-  };
-
-  // Only attach order_id if it is a real live server order id format (avoids SDK bad request crash)
-  if (orderId && !orderId.startsWith('order_test_') && !orderId.startsWith('order_acp_') && !orderId.startsWith('order_x402_')) {
-    options.order_id = orderId;
-  }
-
-  try {
-    const rzp = new Razorpay(options);
-    rzp.on('payment.failed', function (response) {
+      const verifyResult = await verifyRes.json();
       removePaymentVerifyingBubble();
-      appendMessage('assistant', `⚠️ **Razorpay Payment Failed**: ${response.error?.description || response.error?.reason || 'Transaction could not be processed'}`);
-    });
-    rzp.open();
-  } catch (err) {
-    console.error('Failed to open Razorpay modal:', err);
-    alert('Error initializing Razorpay Checkout: ' + err.message);
+
+      if (verifyResult.success) {
+        renderPaymentSuccessMessage(payload, verifyResult.data);
+        await refreshCart();
+      } else {
+        appendMessage('assistant', `⚠️ **Payment Verification Failed**: ${verifyResult.error || 'Signature check failed'}`);
+      }
+    } catch (err) {
+      removePaymentVerifyingBubble();
+      appendMessage('assistant', `⚠️ **Payment Verification Network Error**: ${err.message}`);
+    }
   }
+
+  // If Razorpay SDK is available, try Standard Checkout
+  if (typeof Razorpay !== 'undefined') {
+    const options = {
+      key: effectiveKey,
+      amount: effectiveAmount,
+      currency: effectiveCurrency,
+      name: 'Apex Footwear',
+      description: 'Agent Commerce Gateway Order',
+      handler: function (response) {
+        completeVerification(
+          response.razorpay_payment_id,
+          response.razorpay_order_id || safeOrderId,
+          response.razorpay_signature
+        );
+      },
+      prefill: {
+        name: 'Buyer Agent',
+        email: 'buyer@agentcommerce.ai',
+        contact: '9999999999'
+      },
+      theme: {
+        color: '#6366f1'
+      },
+      modal: {
+        ondismiss: function() {
+          console.log('[Razorpay] Checkout modal dismissed');
+        }
+      }
+    };
+
+    // Live Razorpay order IDs are alphanumeric 14-character tokens (e.g. order_EKwxwAgIt4iNpU)
+    // Avoid passing simulated IDs (like order_acp_...) to checkout.js which would trigger 400 Bad Request
+    const isLiveRazorpayOrder = typeof orderId === 'string' && /^order_[a-zA-Z0-9]{14}$/.test(orderId);
+    if (isLiveRazorpayOrder) {
+      options.order_id = orderId;
+    }
+
+    try {
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        removePaymentVerifyingBubble();
+        appendMessage('assistant', `⚠️ **Razorpay Payment Failed**: ${response.error?.description || response.error?.reason || 'Transaction could not be processed'}`);
+      });
+      rzp.open();
+      return;
+    } catch (err) {
+      console.warn('Standard Razorpay SDK open failed, using Sandbox simulation:', err);
+    }
+  }
+
+  // Instant Test Sandbox Execution Fallback
+  completeVerification(
+    `pay_sandbox_${Date.now()}`,
+    safeOrderId,
+    `sig_sandbox_${Date.now()}`
+  );
 };
 
 function showPaymentVerifyingBubble() {
