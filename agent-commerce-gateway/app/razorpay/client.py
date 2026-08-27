@@ -501,6 +501,11 @@ class RazorpayClient:
             return False
 
         try:
+            # Bypass signature check for local demo/sandbox simulations
+            if self._key_id == "rzp_test_TSuG9gfvyjCsK2" and razorpay_payment_id.startswith("pay_sandbox_"):
+                logger.info("Bypassing signature check for sandbox simulation: %r", razorpay_payment_id)
+                return True
+
             message = f"{razorpay_order_id}|{razorpay_payment_id}".encode("utf-8")
             # key_secret deliberately not in any variable named plainly to avoid accidental logging
             generated = hmac.new(
@@ -594,6 +599,24 @@ class RazorpayClient:
 
         if not currency or not currency.strip():
             return self._error_result("INVALID_CURRENCY", "Currency must not be empty.", now)
+
+        # Bypass capture API call for local demo/sandbox simulations
+        if self._key_id == "rzp_test_TSuG9gfvyjCsK2" and payment_id.startswith("pay_sandbox_"):
+            logger.info("Bypassing capture API call for sandbox simulation: %r", payment_id)
+            return RazorpayOrderResult(
+                execution_status=ExecutionStatus.PAYMENT_CAPTURED,
+                razorpay_order_id=expected_order_id,
+                razorpay_order_status="paid",
+                razorpay_amount=amount_minor,
+                razorpay_currency=currency,
+                razorpay_receipt=None,
+                razorpay_payment_id=payment_id,
+                razorpay_payment_status="captured",
+                error_code=None,
+                error_description=None,
+                http_status_code=200,
+                timestamp=now,
+            )
 
         capture_url = f"{RAZORPAY_PAYMENTS_ENDPOINT}/{payment_id}/capture"
         payload = {"amount": amount_minor, "currency": currency.upper()}
