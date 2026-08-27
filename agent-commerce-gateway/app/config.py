@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, ValidationError
 from typing import Optional
@@ -7,11 +8,11 @@ class Settings(BaseSettings):
     razorpay_key_id: str = Field(..., description="Razorpay test-mode key ID")
     razorpay_key_secret: str = Field(..., description="Razorpay test-mode key secret")
     # Optional secret that protects dashboard mutation endpoints.
-    # If unset, mutations are BLOCKED (fail-closed). Set via DASHBOARD_SECRET env var.
+    # If unset, mutations fallback to DASHBOARD_SECRET env var or default dev secret.
     dashboard_secret: Optional[str] = Field(
         default=None,
         description="Secret token required for dashboard mutation endpoints (POST/PUT/DELETE). "
-                    "Pass as X-Dashboard-Token header. Must be set to enable mutations."
+                    "Pass as X-Dashboard-Token header."
     )
 
     # Allows loading from .env file
@@ -25,3 +26,4 @@ except ValidationError as e:
     for err in e.errors():
         print(f" - {err['loc'][0]}: {err['msg']}")
     sys.exit(1)
+
