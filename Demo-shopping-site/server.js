@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // --- Runtime Config (in-memory merchant credentials) ---
 let runtimeConfig = {
   apiKey: process.env.MERCHANT_API_KEY || null,
-  gatewayUrl: process.env.GATEWAY_URL || 'http://localhost:8001',
+  gatewayUrl: process.env.GATEWAY_URL || 'https://ai-agent-commerce-gateway-cjpp.vercel.app',
   merchantId: null,
   connected: false
 };
@@ -174,7 +174,7 @@ app.get('/pay', (req, res) => {
 
 // 0.05 GET /api/dashboard-redirect
 app.get('/api/dashboard-redirect', (req, res) => {
-  const targetUrl = (runtimeConfig.gatewayUrl || process.env.GATEWAY_URL || 'http://localhost:8001').replace(/\/$/, '');
+  const targetUrl = (runtimeConfig.gatewayUrl || process.env.GATEWAY_URL || 'https://ai-agent-commerce-gateway-cjpp.vercel.app').replace(/\/$/, '');
   res.redirect(`${targetUrl}/api/dashboard/`);
 });
 
@@ -194,7 +194,7 @@ app.post('/api/connect', async (req, res) => {
     return res.status(400).json({ error: 'API key is required' });
   }
   const cleanApiKey = String(apiKey).trim().replace(/[^\x20-\x7E]/g, "");
-  const targetGatewayUrl = (gatewayUrl || runtimeConfig.gatewayUrl || 'http://localhost:8001').replace(/\/$/, "");
+  const targetGatewayUrl = (gatewayUrl || runtimeConfig.gatewayUrl || 'https://ai-agent-commerce-gateway-cjpp.vercel.app').replace(/\/$/, "");
 
   if (!AgentCommerceGateway) {
     return res.status(500).json({ error: 'Gateway SDK not available on server' });
@@ -225,7 +225,7 @@ app.post('/api/connect', async (req, res) => {
 // 0.3 POST /api/disconnect
 app.post('/api/disconnect', (req, res) => {
   runtimeConfig.apiKey = null;
-  runtimeConfig.gatewayUrl = 'http://localhost:8001';
+  runtimeConfig.gatewayUrl = 'https://ai-agent-commerce-gateway-cjpp.vercel.app';
   runtimeConfig.merchantId = null;
   runtimeConfig.connected = false;
   res.json({ success: true });
@@ -329,7 +329,7 @@ app.post('/api/checkout-intent', async (req, res) => {
   }
 
   try {
-    const gatewayUrl = runtimeConfig.gatewayUrl || process.env.GATEWAY_URL || 'http://localhost:8001';
+    const gatewayUrl = runtimeConfig.gatewayUrl || process.env.GATEWAY_URL || 'https://ai-agent-commerce-gateway-cjpp.vercel.app';
     const gateway = new AgentCommerceGateway(merchantApiKey, gatewayUrl);
     
     // Convert cart items to ACP line items in minor currency units (paise)
@@ -418,7 +418,7 @@ app.post('/api/verify-payment', async (req, res) => {
   }
 
   try {
-    const gatewayUrl = runtimeConfig.gatewayUrl || process.env.GATEWAY_URL || 'http://localhost:8001';
+    const gatewayUrl = runtimeConfig.gatewayUrl || process.env.GATEWAY_URL || 'https://ai-agent-commerce-gateway-cjpp.vercel.app';
     const gateway = new AgentCommerceGateway(merchantApiKey, gatewayUrl);
 
     const result = await gateway.verifyPayment({

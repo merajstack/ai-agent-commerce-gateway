@@ -2,9 +2,9 @@ class AgentCommerceGateway {
     /**
      * Initialize the Agent Commerce Gateway SDK.
      * @param {string} apiKey - The merchant's API key (starting with sk_test_)
-     * @param {string} gatewayUrl - The URL of the gateway (defaults to http://localhost:8000)
+     * @param {string} gatewayUrl - The URL of the gateway (defaults to https://ai-agent-commerce-gateway-cjpp.vercel.app)
      */
-    constructor(apiKey, gatewayUrl = (typeof process !== "undefined" && process.env && process.env.GATEWAY_URL) ? process.env.GATEWAY_URL : "http://localhost:8001") {
+    constructor(apiKey, gatewayUrl = (typeof process !== "undefined" && process.env && process.env.GATEWAY_URL) ? process.env.GATEWAY_URL : "https://ai-agent-commerce-gateway-cjpp.vercel.app") {
         if (!apiKey) {
             throw new Error("AgentCommerceGateway requires an apiKey");
         }

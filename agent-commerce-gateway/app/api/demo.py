@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -80,6 +80,7 @@ async def simulate_purchase(req: DemoPurchaseRequest, db: Session = Depends(get_
     transaction_id = f"demo-txn-{uuid.uuid4().hex[:8]}"
 
     # 1. Construct standard CommerceRequest
+    now = datetime.now(timezone.utc)
     commerce_req = CommerceRequest(
         transaction_id=transaction_id,
         merchant_id=req.merchant_id,
@@ -92,8 +93,8 @@ async def simulate_purchase(req: DemoPurchaseRequest, db: Session = Depends(get_
             unit_price=Money(amount_minor=req.amount_minor, currency=req.currency)
         )],
         calculated_total=Money(amount_minor=req.amount_minor, currency=req.currency),
-        created_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc),
+        created_at=now,
+        expires_at=now + timedelta(minutes=15),
         nonce=f"nonce-{transaction_id}",
         buyer_protocol=req.protocol,
         receipt_destination_protocol=req.protocol,
