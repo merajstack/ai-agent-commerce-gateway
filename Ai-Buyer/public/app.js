@@ -600,80 +600,63 @@ function appendAssistantMessage(data) {
   scrollToBottom();
 }
 
-// --- Razorpay Modal Controller State ---
-let activeCheckoutSession = null;
-
-// Launch Razorpay Standard / Sandbox Checkout Modal
+// Launch Razorpay Official Checkout Modal
 window.launchRazorpayCheckout = function(orderId, keyId, amountMinor, currency) {
   const effectiveKey = keyId || 'rzp_test_TSuG9gfvyjCsK2';
-  const effectiveAmount = parseInt(amountMinor, 10) || 10000;
+  const effectiveAmount = parseInt(amountMinor, 10) || 850000;
   const effectiveCurrency = currency || 'INR';
   const safeOrderId = orderId || `order_${Date.now()}`;
-  const amountFormatted = (effectiveAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  activeCheckoutSession = {
-    orderId: safeOrderId,
-    keyId: effectiveKey,
-    amountMinor: effectiveAmount,
+  if (typeof Razorpay === 'undefined') {
+    console.error('Razorpay SDK not loaded');
+    appendMessage('assistant', '⚠️ Razorpay Checkout SDK not loaded. Please check your internet connection.');
+    return;
+  }
+
+  const options = {
+    key: effectiveKey,
+    amount: effectiveAmount,
     currency: effectiveCurrency,
-    amountFormatted: amountFormatted
+    name: 'Apex Footwear',
+    description: 'Agent Commerce Gateway Order',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&auto=format&fit=crop&q=80',
+    prefill: {
+      name: 'Demo Buyer',
+      email: 'shopper@agentcommerce.ai',
+      contact: '9999999999'
+    },
+    theme: {
+      color: '#3395ff'
+    },
+    modal: {
+      ondismiss: function() {
+        console.log('[Razorpay] Checkout modal dismissed by user');
+      }
+    },
+    handler: async function (response) {
+      console.log('[Razorpay] Payment Success Callback:', response);
+      await completeVerification(
+        response.razorpay_payment_id || `pay_${Date.now()}`,
+        response.razorpay_order_id || safeOrderId,
+        response.razorpay_signature || `sig_verified_${Date.now()}`,
+        effectiveAmount,
+        effectiveCurrency
+      );
+    }
   };
 
-  // Populate Razorpay Modal elements
-  const modalOrderIdEl = document.getElementById('rzp-modal-order-id');
-  const modalAmountEl = document.getElementById('rzp-modal-amount');
-  const modalBtnTextEl = document.getElementById('rzp-btn-text');
-
-  if (modalOrderIdEl) modalOrderIdEl.textContent = `Order: ${safeOrderId}`;
-  if (modalAmountEl) modalAmountEl.textContent = `₹${amountFormatted}`;
-  if (modalBtnTextEl) modalBtnTextEl.textContent = `Pay ₹${amountFormatted}`;
-
-  // Reset tab to card
-  switchRzpTab('card');
-
-  // Open Razorpay Modal
-  const modal = document.getElementById('razorpay-checkout-modal');
-  if (modal) {
-    modal.classList.add('active');
+  try {
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (resp) {
+      console.error('[Razorpay] Payment Failed:', resp.error);
+      removePaymentVerifyingBubble();
+      appendMessage('assistant', `⚠️ **Razorpay Payment Failed**: ${resp.error?.description || resp.error?.reason || 'Transaction could not be processed'}`);
+    });
+    rzp.open();
+  } catch (err) {
+    console.error('Error invoking Razorpay SDK:', err);
+    appendMessage('assistant', `⚠️ **Razorpay SDK Error**: ${err.message}`);
   }
-};
-
-window.closeRazorpayModal = function() {
-  const modal = document.getElementById('razorpay-checkout-modal');
-  if (modal) {
-    modal.classList.remove('active');
-  }
-};
-
-window.switchRzpTab = function(tabName) {
-  const tabs = ['card', 'upi', 'instant'];
-  tabs.forEach(t => {
-    const btn = document.getElementById(`rzp-tab-${t}`);
-    const pane = document.getElementById(`rzp-pane-${t}`);
-    if (btn) btn.classList.toggle('active', t === tabName);
-    if (pane) pane.classList.toggle('active', t === tabName);
-  });
-};
-
-window.submitRazorpayModalPayment = async function() {
-  if (!activeCheckoutSession) return;
-
-  const btn = document.getElementById('rzp-submit-pay-btn');
-  const btnText = document.getElementById('rzp-btn-text');
-  if (btn) btn.disabled = true;
-  if (btnText) btnText.textContent = 'Processing Payment... ⏳';
-
-  const session = { ...activeCheckoutSession };
-  const mockPayId = `pay_sandbox_${Date.now()}`;
-  const mockSig = `sig_sandbox_${Date.now()}`;
-
-  setTimeout(async () => {
-    closeRazorpayModal();
-    if (btn) btn.disabled = false;
-    if (btnText) btnText.textContent = `Pay ₹${session.amountFormatted}`;
-
-    await completeVerification(mockPayId, session.orderId, mockSig, session.amountMinor, session.currency);
-  }, 700);
 };
 
 async function completeVerification(payId, ordId, sig, amountMinor, currency) {

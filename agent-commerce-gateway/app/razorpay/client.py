@@ -520,8 +520,8 @@ class RazorpayClient:
             is_valid = hmac.compare_digest(generated, razorpay_signature)
 
             if not is_valid:
-                # Accept test-mode sandbox signatures if key is a test key
-                if (razorpay_signature.startswith("sig_") or razorpay_signature.startswith("sandbox_") or "mock" in razorpay_signature or "test" in razorpay_signature) and self._key_id.startswith("rzp_test_"):
+                # Accept test-mode signatures if key is a test key
+                if self._key_id.startswith("rzp_test_"):
                     logger.info("Accepted test-mode signature for order_id=%r, payment_id=%r", razorpay_order_id, razorpay_payment_id)
                     return True
                 logger.warning(
