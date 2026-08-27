@@ -102,11 +102,11 @@ default_api_key_hash = hashlib.sha256(default_api_key.encode("utf-8")).hexdigest
 
 try:
     from app.config import settings
-    default_rzp_key_id = settings.razorpay_key_id or "rzp_test_TSuG9gfvyjCsK2"
-    default_rzp_key_secret = settings.razorpay_key_secret or "30EP1nv8oHGTOfMniEyo5wFe"
+    default_rzp_key_id = settings.razorpay_key_id or "rzp_test_TUk2ksvIGBzkbe"
+    default_rzp_key_secret = settings.razorpay_key_secret or "CYgMXDVOPhXQ1hJXq9hAJanX"
 except Exception:
-    default_rzp_key_id = "rzp_test_TSuG9gfvyjCsK2"
-    default_rzp_key_secret = "30EP1nv8oHGTOfMniEyo5wFe"
+    default_rzp_key_id = "rzp_test_TUk2ksvIGBzkbe"
+    default_rzp_key_secret = "CYgMXDVOPhXQ1hJXq9hAJanX"
 
 merchant_store.save_merchant(
     MerchantConfig(

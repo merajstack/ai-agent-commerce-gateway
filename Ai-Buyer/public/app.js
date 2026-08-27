@@ -602,7 +602,7 @@ function appendAssistantMessage(data) {
 
 // Launch Razorpay Official Checkout Modal
 window.launchRazorpayCheckout = function(orderId, keyId, amountMinor, currency) {
-  const effectiveKey = keyId || 'rzp_test_TSuG9gfvyjCsK2';
+  const effectiveKey = keyId || 'rzp_test_TUk2ksvIGBzkbe';
   const effectiveAmount = parseInt(amountMinor, 10) || 850000;
   const effectiveCurrency = currency || 'INR';
   const safeOrderId = orderId || `order_${Date.now()}`;
@@ -620,6 +620,7 @@ window.launchRazorpayCheckout = function(orderId, keyId, amountMinor, currency) 
     name: 'Apex Footwear',
     description: 'Agent Commerce Gateway Order',
     image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&auto=format&fit=crop&q=80',
+    order_id: orderId && orderId.startsWith('order_') ? orderId : undefined,
     prefill: {
       name: 'Demo Buyer',
       email: 'shopper@agentcommerce.ai',
