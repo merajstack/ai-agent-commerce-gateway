@@ -672,17 +672,9 @@ window.launchRazorpayCheckout = function(orderId, keyId, amountMinor, currency) 
     // Live Razorpay order IDs are alphanumeric 14-character tokens (e.g. order_EKwxwAgIt4iNpU)
     // Avoid passing simulated IDs (like order_acp_...) to checkout.js which would trigger 400 Bad Request
     const isLiveRazorpayOrder = typeof orderId === 'string' && /^order_[a-zA-Z0-9]{14}$/.test(orderId);
-    if (!isLiveRazorpayOrder || safeOrderId.includes('mock')) {
-      console.log('Simulated or invalid live order ID detected. Bypassing Razorpay SDK and using Sandbox simulation.');
-      completeVerification(
-        `pay_sandbox_${Date.now()}`,
-        safeOrderId,
-        `sig_sandbox_${Date.now()}`
-      );
-      return;
+    if (isLiveRazorpayOrder) {
+      options.order_id = orderId;
     }
-    
-    options.order_id = orderId;
 
     try {
       const rzp = new Razorpay(options);
