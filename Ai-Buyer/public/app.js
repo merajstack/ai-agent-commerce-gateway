@@ -949,17 +949,7 @@ async function refreshCart() {
 // Clear Cart
 async function clearCart() {
   try {
-    const res = await fetch('/api/cart');
-    const data = await res.json();
-    if (data.data && data.data.items) {
-      for (const item of data.data.items) {
-        await fetch('/api/cart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: item.id, quantity: 0 })
-        });
-      }
-    }
+    await fetch('/api/cart', { method: 'DELETE' });
     await refreshCart();
   } catch (e) {
     console.error('Failed to clear cart:', e);

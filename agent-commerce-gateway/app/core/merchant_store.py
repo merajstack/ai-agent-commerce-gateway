@@ -113,7 +113,7 @@ merchant_store.save_merchant(
         merchant_id=default_merchant_id,
         merchant_name="Demo Merchant",
         razorpay_key_id=default_rzp_key_id,
-        max_transaction_amount=1000000, # 10,000.00 max limit (₹10,000)
+        max_transaction_amount=10000000, # 100,000.00 max limit (₹100,000)
         allowed_currency="INR",
         blocked_categories=[]
     ),

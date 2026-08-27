@@ -51,6 +51,41 @@ app.get('/api/cart', async (req, res) => {
   res.json({ data: cart });
 });
 
+app.post('/api/cart', async (req, res) => {
+  try {
+    const { id, quantity, size } = req.body;
+    if (typeof quantity === 'number' && quantity <= 0) {
+      // Clear or remove item
+      try {
+        await fetch(`${toolHandlers.storefrontUrl}/api/cart`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, quantity: 0 })
+        });
+      } catch (e) {}
+      toolHandlers.cart.items = toolHandlers.cart.items.filter(i => i.id !== id);
+      toolHandlers.cart.total_amount = toolHandlers.cart.items.reduce((s, i) => s + i.price * i.quantity, 0);
+      return res.json({ data: toolHandlers.cart });
+    }
+    const result = await toolHandlers.addToCart({ id, quantity, size });
+    res.json({ data: result.cart });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/cart', async (req, res) => {
+  try {
+    toolHandlers.cart = { items: [], total_amount: 0, currency: 'INR' };
+    try {
+      await fetch(`${toolHandlers.storefrontUrl}/api/cart`, { method: 'DELETE' });
+    } catch (e) {}
+    res.json({ success: true, data: toolHandlers.cart });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Raw Protocol Generator API (inspect without checkout)
 app.post('/api/generate-protocol', async (req, res) => {
   try {

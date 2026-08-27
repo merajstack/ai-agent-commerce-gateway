@@ -311,6 +311,13 @@ app.post('/api/cart', (req, res) => {
   res.json({ data: cart });
 });
 
+// 3.2 DELETE /api/cart (Clear cart)
+app.delete('/api/cart', (req, res) => {
+  cart.items = [];
+  updateCartTotal();
+  res.json({ success: true, data: cart });
+});
+
 // 4. POST /api/checkout-intent (Checkout intent via ACP)
 app.post('/api/checkout-intent', async (req, res) => {
   if (cart.items.length === 0) {
