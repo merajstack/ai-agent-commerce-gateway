@@ -366,7 +366,20 @@ app.post('/api/checkout-intent', async (req, res) => {
     };
 
     // Execute protocol request through the gateway (POST /api/v1/execute)
-    const result = await gateway.executeRequest(protocol, payload);
+    let result;
+    try {
+      result = await gateway.executeRequest(protocol, payload);
+    } catch (apiErr) {
+      if (apiErr.status === 401 && runtimeConfig.apiKey) {
+        console.warn('Gateway returned 401. Vercel likely cold-started and lost in-memory state. Retrying with default key.');
+        const defaultKey = 'sk_test_f22ff116facae2ec5d6a6266cb366dae0e93d85674311019';
+        runtimeConfig.apiKey = defaultKey; // Reset for future requests
+        gateway.apiKey = defaultKey;
+        result = await gateway.executeRequest(protocol, payload);
+      } else {
+        throw apiErr;
+      }
+    }
 
     if (result.gateway_decision === 'ALLOW') {
       const currentTotal = cart.total_amount;
