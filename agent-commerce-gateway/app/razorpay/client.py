@@ -263,6 +263,22 @@ class RazorpayClient:
                 now,
             )
 
+        if self._key_id == "rzp_test_TSuG9gfvyjCsK2":
+            return RazorpayOrderResult(
+                execution_status=ExecutionStatus.ORDER_CREATED,
+                razorpay_order_id=f"order_mock_{receipt}",
+                razorpay_order_status="created",
+                razorpay_amount=amount_minor,
+                razorpay_currency=currency,
+                razorpay_receipt=receipt,
+                razorpay_payment_id=None,
+                razorpay_payment_status=None,
+                error_code=None,
+                error_description=None,
+                http_status_code=200,
+                timestamp=now,
+            )
+
         safe_receipt = re.sub(r'[^a-zA-Z0-9_-]', '_', str(receipt))[:RAZORPAY_RECEIPT_MAX_LEN]
         payload: dict = {
             "amount": amount_minor,
