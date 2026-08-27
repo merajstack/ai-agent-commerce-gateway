@@ -470,28 +470,8 @@ async function renderRealPipelineStages(stages, protocol, decision, reason, razo
   }
 }
 
-function showReceiptModal(paymentId, orderId, amountFormatted) {
-  document.getElementById('receipt-payment-id').textContent = paymentId;
-  document.getElementById('receipt-order-id').textContent = orderId;
-  document.getElementById('receipt-amount').textContent = amountFormatted;
-  const modal = document.getElementById('receipt-modal');
-  if (modal) modal.classList.add('active');
-}
-
-function closeReceiptModal() {
-  const modal = document.getElementById('receipt-modal');
-  if (modal) modal.classList.remove('active');
-}
-
 // Modal Toggle Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  const closeReceiptBtn = document.getElementById('btn-close-receipt');
-  if (closeReceiptBtn) {
-    closeReceiptBtn.addEventListener('click', () => {
-      closeReceiptModal();
-      showCatalog();
-    });
-  }
 
   const toggleCanonicalBtn = document.getElementById('btn-toggle-canonical');
   const canonicalDetails = document.getElementById('canonical-details');
@@ -610,8 +590,13 @@ async function checkoutIntent() {
                 `;
                 checkoutMessage.className = 'success-msg';
 
-                // Display Celebration Receipt Modal
-                showReceiptModal(response.razorpay_payment_id, response.razorpay_order_id, paidAmountFormatted);
+                // Remove custom footstore receipt modal as requested by user.
+                // Just return to the catalog after successful Razorpay verification.
+                setTimeout(() => {
+                  closePipelineModal();
+                  showCatalog();
+                  document.getElementById('checkout-message').style.display = 'none';
+                }, 3000);
               } else {
                 checkoutMessage.innerHTML = `⚠️ Payment captured check failed: ${verifyData.error || 'Signature check failed'}`;
                 checkoutMessage.className = 'error-msg';

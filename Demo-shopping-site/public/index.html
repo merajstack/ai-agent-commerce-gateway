@@ -250,49 +250,7 @@
     </div>
   </div>
 
-  <!-- Verified Payment Celebration Receipt Modal -->
-  <div id="receipt-modal" class="modal-backdrop" aria-hidden="true">
-    <div class="receipt-dialog" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
-      <div class="receipt-success-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </div>
-      <h2 id="receipt-title">Payment Captured & Verified!</h2>
-      <p class="receipt-subtitle">Your transaction has been processed and permanently recorded in the Gateway Audit Ledger.</p>
 
-      <div class="receipt-details-box">
-        <div class="receipt-row">
-          <span class="label">Razorpay Payment ID</span>
-          <span class="value"><code id="receipt-payment-id">pay_...</code></span>
-        </div>
-        <div class="receipt-row">
-          <span class="label">Razorpay Order ID</span>
-          <span class="value"><code id="receipt-order-id">order_...</code></span>
-        </div>
-        <div class="receipt-row">
-          <span class="label">Amount Paid</span>
-          <span class="value" id="receipt-amount" style="color: #15803d;">₹0</span>
-        </div>
-        <div class="receipt-row">
-          <span class="label">Gateway Decision</span>
-          <span class="value"><span style="background: #dcfce7; color: #15803d; font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;">ALLOW</span></span>
-        </div>
-        <div class="audit-status-badge">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          <span>Audit Event Committed to Gateway SQLite Ledger</span>
-        </div>
-      </div>
-
-      <div class="receipt-actions">
-        <a href="/api/dashboard-redirect" target="_blank" class="btn-audit-dashboard">
-          <span>View Gateway Audit Log</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-        </a>
-        <button id="btn-close-receipt" class="btn-continue-shopping">Continue Shopping</button>
-      </div>
-    </div>
-  </div>
 
   <script src="/app.js"></script>
 </body>
